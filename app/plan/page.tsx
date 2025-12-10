@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useI18n, Language } from "@/lib/i18n";
@@ -22,6 +22,10 @@ function PlanPageContent() {
   });
   const [planLanguage, setPlanLanguage] = useState<Language | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  
+  // 初期化完了フラグと前回の言語をトラック
+  const isInitialized = useRef(false);
+  const prevLanguageRef = useRef<Language>(language);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("interviewPlan");
@@ -31,15 +35,25 @@ function PlanPageContent() {
 
     if (stored) {
       setPlan(JSON.parse(stored));
+      // 言語が保存されていない場合は、現在の言語をデフォルトとして使用（翻訳しない）
       setPlanLanguage(storedLang || language);
+      isInitialized.current = true;
     } else {
       router.push("/role");
     }
-  }, [router, language]);
+  }, [router]); // language を依存配列から外す
 
   // 言語トグルが切り替わったら、自動的にプランを再生成して翻訳する
   useEffect(() => {
+    // 初期化前は何もしない
+    if (!isInitialized.current) return;
     if (!plan || !planLanguage) return;
+    
+    // 言語が実際に変わった場合のみ翻訳
+    if (language === prevLanguageRef.current) return;
+    prevLanguageRef.current = language;
+    
+    // 保存されている言語と現在の言語が同じなら翻訳不要
     if (language === planLanguage) return;
 
     let cancelled = false;
@@ -85,7 +99,7 @@ function PlanPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [language, plan, planLanguage]);
+  }, [language]); // plan と planLanguage を依存配列から外す
 
   if (!plan) {
     return (

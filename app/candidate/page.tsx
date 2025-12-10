@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n, Language } from "@/lib/i18n";
 import { Button, TextArea, Card } from "@/components/ui";
@@ -42,24 +42,40 @@ function CandidatePageContent() {
   const [isSampleLoading, setIsSampleLoading] = useState(false);
   const [isTranslatingRole, setIsTranslatingRole] = useState(false);
   const [error, setError] = useState("");
+  
+  // 初期化完了フラグ
+  const isInitialized = useRef(false);
+  // 前回の言語をトラック
+  const prevLanguageRef = useRef<Language>(language);
 
   // 初回ロード：roleProfile を sessionStorage から取得
   useEffect(() => {
     const stored = sessionStorage.getItem("roleProfile");
     const storedLang = sessionStorage.getItem("roleProfileLanguage") as Language | null;
     if (stored) {
-      setRoleProfile(JSON.parse(stored));
+      const parsedProfile = JSON.parse(stored);
+      setRoleProfile(parsedProfile);
+      // 言語が保存されていない場合は、現在の言語をデフォルトとして使用（翻訳しない）
       setRoleProfileLanguage(storedLang || language);
+      isInitialized.current = true;
     } else {
       router.push("/role");
     }
-  }, [router, language]);
+  }, [router]); // language を依存配列から外す
 
   // 言語トグルが切り替わったら、roleProfile を再生成して翻訳する
   useEffect(() => {
+    // 初期化前は何もしない
+    if (!isInitialized.current) return;
     if (!roleProfile || !roleProfileLanguage) return;
-    if (language === roleProfileLanguage) return;
     if (!roleProfile.rawText) return;
+    
+    // 言語が実際に変わった場合のみ翻訳
+    if (language === prevLanguageRef.current) return;
+    prevLanguageRef.current = language;
+    
+    // 保存されている言語と現在の言語が同じなら翻訳不要
+    if (language === roleProfileLanguage) return;
 
     let cancelled = false;
 
@@ -107,7 +123,7 @@ function CandidatePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [language, roleProfile, roleProfileLanguage]);
+  }, [language]); // roleProfile と roleProfileLanguage を依存配列から外す
 
   const handleUseSample = () => {
     if (candidateText.trim()) {
