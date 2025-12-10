@@ -1,10 +1,14 @@
 # InterviewPilot AI
 
-> AI-powered interview question and scorecard generator for HR teams.
+> AI-powered interview question and scorecard generator for hiring teams.
+
+## Live Demo
+
+- **Production:** https://interviewpilot-ai.vercel.app/
 
 ## Overview
 
-InterviewPilot AI is an AI assistant designed specifically for the **interview phase** of hiring. It helps HR teams and hiring managers standardize their interview process by generating tailored interview questions, evaluation criteria, and scorecards.
+InterviewPilot AI is an AI assistant focused on the **interview phase** of hiring. It helps HR teams and hiring managers run structured, fair, and repeatable interviews by generating tailored interview questions, evaluation criteria, and scorecards from a job description (and optionally a candidate profile).
 
 ### Why InterviewPilot AI?
 
@@ -23,13 +27,30 @@ InterviewPilot AI is an AI assistant designed specifically for the **interview p
 - ✅ **Scorecard Generation** - Structured evaluation categories with max scores
 - ✅ **EN/JA Language Support** - Full bilingual support for UI and AI output
 
-## Tech Stack
+## Tech Stack & Architecture
 
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js 15 (App Router, React Server Components)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Database:** Supabase (ready for future persistence)
-- **AI:** OpenAI GPT-4o
+- **Styling:** Tailwind CSS + custom design tokens
+- **Auth & Identity:** Supabase Auth (Google OAuth + Email/Password)
+- **Backend:** Next.js Route Handlers (serverless functions)
+- **AI:** OpenAI GPT-4o for role analysis, candidate analysis, and interview plan generation
+- **i18n:** Simple JSON-based EN/JA translations with client-side context
+
+High-level architecture:
+
+- **Client (Next.js App Router)**
+  - `/role`, `/candidate`, `/plan` as a 3-step flow
+  - `/login` for Google + email/password auth
+  - `/settings` for account information and (optional) deletion
+- **API Routes**
+  - `POST /api/role/analyze` → prompts OpenAI to extract a structured role profile
+  - `POST /api/candidate/analyze` → extracts a candidate profile
+  - `POST /api/interview/generate` → generates questions, good signs, red flags, and scorecard
+  - `POST /api/account/delete` → deletes the current user via Supabase Admin API (service role key, server-only)
+- **Data flow**
+  - Role & candidate profiles are stored in `sessionStorage` between steps
+  - Interview plan is computed on the server and rendered on `/plan`
 
 ## Getting Started
 
@@ -60,8 +81,12 @@ Create a `.env.local` file in the root directory:
 # OpenAI API Key (Required)
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Supabase Configuration (Optional for MVP)
+# Supabase Configuration (Required for auth)
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Supabase service role key (Required only for account deletion API)
+# IMPORTANT: never expose this key to the browser. It is used server-side only.
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
 ```
 
@@ -100,6 +125,19 @@ npm run start
    - View generated interview questions by category
    - Review good signs and red flags for each question
    - Use the scorecard for consistent evaluation
+
+## Security & Auth Design
+
+- **Authentication**
+  - Supabase Auth with Google OAuth and Email/Password
+  - Password reset via Supabase’s `resetPasswordForEmail`
+  - Account deletion endpoint (`/api/account/delete`) that calls Supabase Admin API server-side only
+- **Key management**
+  - `OPENAI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are loaded from environment variables
+  - `SUPABASE_SERVICE_ROLE_KEY` is used **only in server-side route handlers** and is never exposed to the client
+- **Data**
+  - This MVP does not persist interview data to a database; role/candidate/interview plan are stored in `sessionStorage` for the current browser session
+  - This keeps the demo simple while still demonstrating how a production system would separate concerns (auth, AI, and UI)
 
 ## Project Structure
 
