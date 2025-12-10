@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, Language } from "@/lib/i18n";
 import { Button, Card, Section } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth";
 import { InterviewPlan, InterviewQuestion, QuestionCategory } from "@/types";
 
 function PlanPageContent() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const router = useRouter();
 
   const [plan, setPlan] = useState<InterviewPlan | null>(null);
@@ -20,15 +20,72 @@ function PlanPageContent() {
     behavioral: true,
     culture: true,
   });
+  const [planLanguage, setPlanLanguage] = useState<Language | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("interviewPlan");
+    const storedLang = sessionStorage.getItem(
+      "interviewPlanLanguage"
+    ) as Language | null;
+
     if (stored) {
       setPlan(JSON.parse(stored));
+      setPlanLanguage(storedLang || language);
     } else {
       router.push("/role");
     }
-  }, [router]);
+  }, [router, language]);
+
+  // 言語トグルが切り替わったら、自動的にプランを再生成して翻訳する
+  useEffect(() => {
+    if (!plan || !planLanguage) return;
+    if (language === planLanguage) return;
+
+    let cancelled = false;
+
+    const regenerateForLanguage = async () => {
+      setIsTranslating(true);
+      try {
+        const response = await fetch("/api/interview/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            roleProfile: plan.roleProfile,
+            candidateProfile: plan.candidateProfile,
+            language,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Interview plan regeneration failed");
+        }
+
+        const data = await response.json();
+        if (cancelled) return;
+
+        setPlan(data.interviewPlan);
+        setPlanLanguage(language);
+        sessionStorage.setItem(
+          "interviewPlan",
+          JSON.stringify(data.interviewPlan)
+        );
+        sessionStorage.setItem("interviewPlanLanguage", language);
+      } catch (error) {
+        console.error("Failed to regenerate interview plan:", error);
+      } finally {
+        if (!cancelled) {
+          setIsTranslating(false);
+        }
+      }
+    };
+
+    regenerateForLanguage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language, plan, planLanguage]);
 
   if (!plan) {
     return (
@@ -126,6 +183,11 @@ function PlanPageContent() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {isTranslating && (
+        <div className="mb-4 rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
+          {t("button.generating")}
+        </div>
+      )}
       {/* Header */}
       <div className="mb-4 text-sm font-medium text-primary-700">
         {t("steps.plan")}

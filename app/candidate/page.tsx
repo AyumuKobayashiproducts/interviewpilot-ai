@@ -134,10 +134,12 @@ function CandidatePageContent() {
       }
 
       const planData = await planResponse.json();
+      // 保存時に、どの言語で生成したプランかも一緒に記録しておく
       sessionStorage.setItem(
         "interviewPlan",
         JSON.stringify(planData.interviewPlan)
       );
+      sessionStorage.setItem("interviewPlanLanguage", language);
       router.push("/plan");
     } catch (err) {
       setError(t("error.apiError"));
