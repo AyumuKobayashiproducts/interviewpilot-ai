@@ -33,6 +33,7 @@ const mockAuthMethods = {
   signUp: async () => mockError,
   signOut: async () => ({ error: null }),
   exchangeCodeForSession: async () => ({ error: null }),
+  resetPasswordForEmail: async () => mockError,
 };
 
 // For backward compatibility, export a getter

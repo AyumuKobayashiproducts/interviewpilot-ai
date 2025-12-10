@@ -9,9 +9,11 @@ interface EmailAuthFormProps {
   onSuccess?: () => void;
 }
 
+type Mode = "signIn" | "signUp" | "reset";
+
 export function EmailAuthForm({ onSuccess }: EmailAuthFormProps) {
   const { t } = useI18n();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<Mode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,45 +26,56 @@ export function EmailAuthForm({ onSuccess }: EmailAuthFormProps) {
     setError("");
     setMessage("");
 
-    if (!email || !password) {
-      setError(t("auth.error.emptyFields"));
-      return;
-    }
-
-    if (isSignUp && password !== confirmPassword) {
-      setError(t("auth.error.passwordMismatch"));
-      return;
-    }
-
-    if (password.length < 6) {
-      setError(t("auth.error.passwordTooShort"));
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
-        // Sign up
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
+      if (mode === "reset") {
+        if (!email) {
+          setError(t("auth.error.emptyFields"));
+          return;
+        }
 
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
         if (error) throw error;
-        setMessage(t("auth.signUp.checkEmail"));
+        setMessage(t("auth.reset.checkEmail"));
       } else {
-        // Sign in
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        if (!email || !password) {
+          setError(t("auth.error.emptyFields"));
+          return;
+        }
 
-        if (error) throw error;
-        onSuccess?.();
+        if (mode === "signUp" && password !== confirmPassword) {
+          setError(t("auth.error.passwordMismatch"));
+          return;
+        }
+
+        if (password.length < 6) {
+          setError(t("auth.error.passwordTooShort"));
+          return;
+        }
+
+        // Sign up
+        if (mode === "signUp") {
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
+          });
+
+          if (error) throw error;
+          setMessage(t("auth.signUp.checkEmail"));
+        } else {
+          // Sign in
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) throw error;
+          onSuccess?.();
+        }
       }
     } catch (err: any) {
       if (err.message === "Invalid login credentials") {
@@ -88,16 +101,18 @@ export function EmailAuthForm({ onSuccess }: EmailAuthFormProps) {
         required
       />
 
-      <Input
-        type="password"
-        label={t("auth.password")}
-        placeholder="••••••••"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
+      {mode !== "reset" && (
+        <Input
+          type="password"
+          label={t("auth.password")}
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      )}
 
-      {isSignUp && (
+      {mode === "signUp" && (
         <Input
           type="password"
           label={t("auth.confirmPassword")}
@@ -120,25 +135,45 @@ export function EmailAuthForm({ onSuccess }: EmailAuthFormProps) {
         </div>
       )}
 
-      <Button
-        type="submit"
-        isLoading={isLoading}
-        className="w-full"
-      >
-        {isSignUp ? t("auth.signUp.button") : t("auth.signIn.button")}
+      <Button type="submit" isLoading={isLoading} className="w-full">
+        {mode === "reset"
+          ? t("auth.reset.button")
+          : mode === "signUp"
+          ? t("auth.signUp.button")
+          : t("auth.signIn.button")}
       </Button>
 
-      <div className="text-center">
+      {mode !== "reset" && (
+        <div className="flex justify-between items-center text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("reset");
+              setError("");
+              setMessage("");
+            }}
+            className="text-slate-500 hover:text-slate-700 hover:underline"
+          >
+            {t("auth.reset.link")}
+          </button>
+        </div>
+      )}
+
+      <div className="text-center mt-2">
         <button
           type="button"
           onClick={() => {
-            setIsSignUp(!isSignUp);
+            setMode((prev) =>
+              prev === "signUp" ? "signIn" : "signUp"
+            );
             setError("");
             setMessage("");
           }}
           className="text-sm text-primary-600 hover:text-primary-700 hover:underline"
         >
-          {isSignUp ? t("auth.signIn.switchTo") : t("auth.signUp.switchTo")}
+          {mode === "signUp"
+            ? t("auth.signIn.switchTo")
+            : t("auth.signUp.switchTo")}
         </button>
       </div>
     </form>

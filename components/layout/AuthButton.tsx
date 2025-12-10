@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 
 export function AuthButton() {
-  const { user, isLoading, isConfigured, signInWithGoogle, signOut } = useAuth();
+  const { user, isLoading, isConfigured, signInWithGoogle, signOut } =
+    useAuth();
   const { t } = useI18n();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -35,9 +37,15 @@ export function AuthButton() {
             {user.user_metadata?.full_name || user.email?.split("@")[0]}
           </span>
         </div>
+        <Link
+          href="/settings"
+          className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all duration-200"
+        >
+          {t("settings.link")}
+        </Link>
         <button
           onClick={() => signOut()}
-          className="px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all duration-200"
+          className="px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all duration-200"
         >
           {t("auth.logout")}
         </button>
