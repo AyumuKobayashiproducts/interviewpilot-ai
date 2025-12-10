@@ -66,7 +66,7 @@
   "plan.scorecard.description": "説明",
   "plan.scorecard.maxScore": "最高得点",
   "plan.notes.title": "面接官向けメモ",
-  "plan.export": "印刷 / エクスポート（近日公開）",
+  "plan.export": "印刷 / PDFとしてエクスポート",
   "plan.startOver": "新しい面接を開始",
   "steps.role": "ステップ 1 / 3 ・ 求人情報の理解",
   "steps.candidate": "ステップ 2 / 3 ・ 候補者情報の追加（任意）",

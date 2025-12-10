@@ -477,7 +477,14 @@ function PlanPageContent() {
         <Button variant="outline" onClick={startOver}>
           {t("plan.startOver")}
         </Button>
-        <Button disabled>
+        <Button
+          variant="outline"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.print();
+            }
+          }}
+        >
           {t("plan.export")}
         </Button>
       </div>

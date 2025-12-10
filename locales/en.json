@@ -66,7 +66,7 @@
   "plan.scorecard.description": "Description",
   "plan.scorecard.maxScore": "Max Score",
   "plan.notes.title": "Interviewer Notes",
-  "plan.export": "Print / Export (Coming Soon)",
+  "plan.export": "Print / Export as PDF",
   "plan.startOver": "Start New Interview",
   "steps.role": "Step 1 of 3 · Understand the role",
   "steps.candidate": "Step 2 of 3 · Add candidate context (optional)",
