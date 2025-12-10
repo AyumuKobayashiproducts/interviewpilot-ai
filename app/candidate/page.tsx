@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, Language } from "@/lib/i18n";
 import { Button, TextArea, Card } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth";
 import { RoleProfile, CandidateProfile } from "@/types";
@@ -37,18 +37,77 @@ function CandidatePageContent() {
 
   const [candidateText, setCandidateText] = useState("");
   const [roleProfile, setRoleProfile] = useState<RoleProfile | null>(null);
+  const [roleProfileLanguage, setRoleProfileLanguage] = useState<Language | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSampleLoading, setIsSampleLoading] = useState(false);
+  const [isTranslatingRole, setIsTranslatingRole] = useState(false);
   const [error, setError] = useState("");
 
+  // 初回ロード：roleProfile を sessionStorage から取得
   useEffect(() => {
     const stored = sessionStorage.getItem("roleProfile");
+    const storedLang = sessionStorage.getItem("roleProfileLanguage") as Language | null;
     if (stored) {
       setRoleProfile(JSON.parse(stored));
+      setRoleProfileLanguage(storedLang || language);
     } else {
       router.push("/role");
     }
-  }, [router]);
+  }, [router, language]);
+
+  // 言語トグルが切り替わったら、roleProfile を再生成して翻訳する
+  useEffect(() => {
+    if (!roleProfile || !roleProfileLanguage) return;
+    if (language === roleProfileLanguage) return;
+    if (!roleProfile.rawText) return;
+
+    let cancelled = false;
+
+    const regenerateRoleProfile = async () => {
+      setIsTranslatingRole(true);
+      try {
+        const response = await fetch("/api/role/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jobDescription: roleProfile.rawText,
+            language,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Role profile regeneration failed");
+        }
+
+        const data = await response.json();
+        if (cancelled) return;
+
+        const newRoleProfile: RoleProfile = {
+          ...data.roleProfile,
+          title: data.roleProfile.title,
+          level: roleProfile.level, // 元のレベルを維持
+          rawText: roleProfile.rawText, // 元のテキストを維持
+        };
+
+        setRoleProfile(newRoleProfile);
+        setRoleProfileLanguage(language);
+        sessionStorage.setItem("roleProfile", JSON.stringify(newRoleProfile));
+        sessionStorage.setItem("roleProfileLanguage", language);
+      } catch (error) {
+        console.error("Failed to regenerate role profile:", error);
+      } finally {
+        if (!cancelled) {
+          setIsTranslatingRole(false);
+        }
+      }
+    };
+
+    regenerateRoleProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [language, roleProfile, roleProfileLanguage]);
 
   const handleUseSample = () => {
     if (candidateText.trim()) {
@@ -158,6 +217,11 @@ function CandidatePageContent() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {isTranslatingRole && (
+        <div className="mb-4 rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
+          {t("button.analyzing")}
+        </div>
+      )}
       <div className="mb-4 text-sm font-medium text-primary-700">
         {t("steps.candidate")}
       </div>
@@ -256,14 +320,14 @@ function CandidatePageContent() {
             variant="outline"
             onClick={() => generatePlan(false)}
             isLoading={isLoading && !candidateText.trim()}
-            disabled={isLoading}
+            disabled={isLoading || isTranslatingRole}
           >
             {t("candidate.skip")}
           </Button>
           <Button
             onClick={() => generatePlan(true)}
             isLoading={isLoading && candidateText.trim().length > 0}
-            disabled={isLoading || !candidateText.trim()}
+            disabled={isLoading || !candidateText.trim() || isTranslatingRole}
           >
             {isLoading ? t("button.generating") : t("candidate.use")}
             {!isLoading && (

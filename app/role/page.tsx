@@ -152,6 +152,7 @@ function RolePageContent() {
 
       // Store in sessionStorage for the next page
       sessionStorage.setItem("roleProfile", JSON.stringify(roleProfile));
+      sessionStorage.setItem("roleProfileLanguage", language);
       router.push("/candidate");
     } catch (err) {
       setError(t("error.apiError"));
