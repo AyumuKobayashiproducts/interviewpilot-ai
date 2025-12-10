@@ -80,7 +80,7 @@
   "error.emptyCandidate": "候補者情報を入力するか、このステップをスキップしてください",
   "error.apiError": "エラーが発生しました。再度お試しください。",
   "language.toggle": "English",
-  "auth.loginWithGoogle": "Googleでログイン",
+  "auth.loginWithGoogle": "Googleアカウントで続行",
   "auth.logout": "ログアウト",
   "auth.loginRequired": "続行するにはログインしてください",
   "auth.welcome": "ようこそ",
@@ -116,6 +116,8 @@
   "settings.delete.success": "アカウントを削除しました。",
   "settings.delete.notConfigured": "このデモ環境ではアカウント削除は有効になっていません。",
   "settings.delete.error": "アカウント削除に失敗しました。時間をおいて再度お試しください。",
-  "login.description": "ログインしてAI面接プランを作成",
+  "login.description": "Google またはメールアドレスでアカウントを作成／ログインして、AI面接プランを作成します。",
+  "login.google.title": "ステップ 1：Googleアカウントで始める",
+  "login.email.title": "ステップ 2：メールアドレスとパスワードで利用する場合",
   "login.terms": "ログインすることで、利用規約とプライバシーポリシーに同意したものとみなされます。"
 }

@@ -80,7 +80,7 @@
   "error.emptyCandidate": "Please enter candidate information or skip this step",
   "error.apiError": "An error occurred. Please try again.",
   "language.toggle": "日本語",
-  "auth.loginWithGoogle": "Sign in with Google",
+  "auth.loginWithGoogle": "Continue with Google",
   "auth.logout": "Sign out",
   "auth.loginRequired": "Please sign in to continue",
   "auth.welcome": "Welcome",
@@ -116,6 +116,8 @@
   "settings.delete.success": "Your account has been deleted.",
   "settings.delete.notConfigured": "Account deletion is not available in this demo environment.",
   "settings.delete.error": "Failed to delete account. Please try again later.",
-  "login.description": "Sign in to create AI-powered interview plans",
+  "login.description": "Sign in or create an account to generate AI-powered interview plans. You can start with Google or email.",
+  "login.google.title": "Option 1 · Use your Google account",
+  "login.email.title": "Option 2 · Use email and password",
   "login.terms": "By signing in, you agree to our Terms of Service and Privacy Policy."
 }
