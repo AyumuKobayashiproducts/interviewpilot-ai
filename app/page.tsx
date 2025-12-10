@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { Button, Card } from "@/components/ui";
 
 export default function HomePage() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { user, isLoading, isConfigured, signInWithGoogle } = useAuth();
 
   const features = [
@@ -99,15 +99,22 @@ export default function HomePage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-8 animate-fade-in">
               <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
-              AI-Powered Interview Assistant
+              {t("home.badge")}
             </div>
             
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 mb-6 animate-fade-in animate-delay-100 tracking-tight leading-[1.1]">
-              Conduct Better{" "}
-              <span className="gradient-text">Interviews</span>
-              <br className="hidden sm:block" />
-              {" "}with AI
-            </h1>
+            {language === "ja" ? (
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6 animate-fade-in animate-delay-100 tracking-tight leading-[1.2]">
+                {t("home.hero.title")}
+              </h1>
+            ) : (
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 mb-6 animate-fade-in animate-delay-100 tracking-tight leading-[1.1]">
+                Conduct Better{" "}
+                <span className="gradient-text">Interviews</span>
+                <br className="hidden sm:block" />
+                {" "}
+                with AI
+              </h1>
+            )}
             <p className="text-lg md:text-xl text-slate-600 mb-10 animate-fade-in animate-delay-200 leading-relaxed max-w-2xl mx-auto">
               {t("home.hero.subtitle")}
             </p>
@@ -155,7 +162,7 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div>
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-8 tracking-tight">
-                Three Simple Steps
+                {t("home.steps.title")}
               </h2>
               <div className="space-y-6">
                 {[
@@ -186,7 +193,9 @@ export default function HomePage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                     </div>
-                    <p className="text-slate-500 text-sm">AI Interview Assistant</p>
+                    <p className="text-slate-500 text-sm">
+                      {t("home.steps.aiAssistantLabel")}
+                    </p>
                   </div>
                 </div>
               </Card>
