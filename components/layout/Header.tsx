@@ -13,6 +13,7 @@ const navItems = [
   { key: "nav.role", href: "/role" },
   { key: "nav.candidate", href: "/candidate" },
   { key: "nav.plan", href: "/plan" },
+  { key: "nav.pricing", href: "/pricing" },
 ];
 
 export function Header() {
