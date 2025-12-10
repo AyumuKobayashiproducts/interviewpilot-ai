@@ -31,6 +31,21 @@ const SAMPLE_CANDIDATE_JA = `B2B SaaSプロダクトの開発経験を7年以上
 - システム設計、コードレビュー、技術的リーダーシップ
 - プロダクトマネージャーやデザイナーとの協働`;
 
+// テキストが日本語を含むかどうかを判定
+function containsJapanese(text: string): boolean {
+  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(text);
+}
+
+// roleProfile の言語を推測
+function detectRoleLanguage(roleProfile: RoleProfile): Language {
+  const textToCheck = [
+    roleProfile.title || "",
+    ...roleProfile.requiredSkills,
+    ...roleProfile.responsibilities,
+  ].join(" ");
+  return containsJapanese(textToCheck) ? "ja" : "en";
+}
+
 function CandidatePageContent() {
   const { t, language } = useI18n();
   const router = useRouter();
@@ -53,15 +68,25 @@ function CandidatePageContent() {
     const stored = sessionStorage.getItem("roleProfile");
     const storedLang = sessionStorage.getItem("roleProfileLanguage") as Language | null;
     if (stored) {
-      const parsedProfile = JSON.parse(stored);
+      const parsedProfile = JSON.parse(stored) as RoleProfile;
       setRoleProfile(parsedProfile);
-      // 言語が保存されていない場合は、現在の言語をデフォルトとして使用（翻訳しない）
-      setRoleProfileLanguage(storedLang || language);
+      
+      // 言語が保存されていない場合は、テキストから推測する
+      if (storedLang) {
+        setRoleProfileLanguage(storedLang);
+      } else {
+        // テキストから言語を推測
+        const detectedLang = detectRoleLanguage(parsedProfile);
+        setRoleProfileLanguage(detectedLang);
+        // 推測した言語を保存
+        sessionStorage.setItem("roleProfileLanguage", detectedLang);
+      }
+      
       isInitialized.current = true;
     } else {
       router.push("/role");
     }
-  }, [router]); // language を依存配列から外す
+  }, [router]);
 
   // 言語トグルが切り替わったら、roleProfile を再生成して翻訳する
   useEffect(() => {
@@ -123,7 +148,7 @@ function CandidatePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [language]); // roleProfile と roleProfileLanguage を依存配列から外す
+  }, [language]);
 
   const handleUseSample = () => {
     if (candidateText.trim()) {

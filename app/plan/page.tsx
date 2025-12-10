@@ -8,6 +8,21 @@ import { Button, Card, Section } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth";
 import { InterviewPlan, InterviewQuestion, QuestionCategory } from "@/types";
 
+// テキストが日本語を含むかどうかを判定
+function containsJapanese(text: string): boolean {
+  return /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/.test(text);
+}
+
+// InterviewPlan の言語を推測
+function detectPlanLanguage(plan: InterviewPlan): Language {
+  const textToCheck = [
+    plan.roleProfile?.title || "",
+    ...(plan.roleProfile?.requiredSkills || []),
+    ...(plan.questions?.map(q => q.question) || []),
+  ].join(" ");
+  return containsJapanese(textToCheck) ? "ja" : "en";
+}
+
 function PlanPageContent() {
   const { t, language } = useI18n();
   const router = useRouter();
@@ -34,14 +49,25 @@ function PlanPageContent() {
     ) as Language | null;
 
     if (stored) {
-      setPlan(JSON.parse(stored));
-      // 言語が保存されていない場合は、現在の言語をデフォルトとして使用（翻訳しない）
-      setPlanLanguage(storedLang || language);
+      const parsedPlan = JSON.parse(stored) as InterviewPlan;
+      setPlan(parsedPlan);
+      
+      // 言語が保存されていない場合は、テキストから推測する
+      if (storedLang) {
+        setPlanLanguage(storedLang);
+      } else {
+        // テキストから言語を推測
+        const detectedLang = detectPlanLanguage(parsedPlan);
+        setPlanLanguage(detectedLang);
+        // 推測した言語を保存
+        sessionStorage.setItem("interviewPlanLanguage", detectedLang);
+      }
+      
       isInitialized.current = true;
     } else {
       router.push("/role");
     }
-  }, [router]); // language を依存配列から外す
+  }, [router]);
 
   // 言語トグルが切り替わったら、自動的にプランを再生成して翻訳する
   useEffect(() => {
@@ -99,7 +125,7 @@ function PlanPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [language]); // plan と planLanguage を依存配列から外す
+  }, [language]);
 
   if (!plan) {
     return (
