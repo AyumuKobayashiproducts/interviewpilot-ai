@@ -73,7 +73,10 @@ npm run dev
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open the app in your browser:
+
+- Production: https://interviewpilot-ai.vercel.app/
+- Local development: http://localhost:3000
 
 ### Build
 
