@@ -102,19 +102,9 @@ export default function HomePage() {
               {t("home.badge")}
             </div>
             
-            {language === "ja" ? (
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6 animate-fade-in animate-delay-100 tracking-tight leading-[1.2]">
-                {t("home.hero.title")}
-              </h1>
-            ) : (
-              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-slate-900 mb-6 animate-fade-in animate-delay-100 tracking-tight leading-[1.1]">
-                Conduct Better{" "}
-                <span className="gradient-text">Interviews</span>
-                <br className="hidden sm:block" />
-                {" "}
-                with AI
-              </h1>
-            )}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6 animate-fade-in animate-delay-100 tracking-tight leading-[1.2]">
+              {t("home.hero.title")}
+            </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 animate-fade-in animate-delay-200 leading-relaxed max-w-2xl mx-auto">
               {t("home.hero.subtitle")}
             </p>
@@ -185,19 +175,111 @@ export default function HomePage() {
               </div>
             </div>
             <div>
-              <Card variant="elevated" className="p-6 lg:p-8">
-                <div className="aspect-[4/3] bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl flex items-center justify-center border border-slate-200/50">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500/10 to-accent-500/10 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    </div>
-                    <p className="text-slate-500 text-sm">
-                      {t("home.steps.aiAssistantLabel")}
+              <Card variant="default" padding="lg">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs font-medium text-[#697386]">
+                      サンプルダッシュボード
+                    </p>
+                    <p className="text-sm font-semibold text-[#1A1F36]">
+                      Senior Backend Engineer
                     </p>
                   </div>
+                  <span className="inline-flex items-center rounded-full border border-[#E6EBF1] px-2 py-0.5 text-[11px] text-[#697386]">
+                    デモ表示
+                  </span>
                 </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="rounded-md border border-[#E6EBF1] bg-[#F6F9FC] px-3 py-2">
+                    <p className="text-[11px] text-[#697386] mb-1">
+                      面接準備にかかる時間
+                    </p>
+                    <p className="text-lg font-semibold text-[#1A1F36]">
+                      -60%
+                    </p>
+                  </div>
+                  <div className="rounded-md border border-[#E6EBF1] bg-[#F6F9FC] px-3 py-2">
+                    <p className="text-[11px] text-[#697386] mb-1">
+                      今月作成したプラン
+                    </p>
+                    <p className="text-lg font-semibold text-[#1A1F36]">12</p>
+                  </div>
+                  <div className="rounded-md border border-[#E6EBF1] bg-[#F6F9FC] px-3 py-2">
+                    <p className="text-[11px] text-[#697386] mb-1">
+                      アクティブな候補者
+                    </p>
+                    <p className="text-lg font-semibold text-[#1A1F36]">5</p>
+                  </div>
+                </div>
+
+                {/* Mini results table */}
+                <div className="border border-[#E6EBF1] rounded-md overflow-hidden bg-white">
+                  <table className="w-full text-xs">
+                    <thead className="bg-[#F6F9FC] border-b border-[#E6EBF1]">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-[#697386]">
+                          候補者
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-[#697386]">
+                          職種
+                        </th>
+                        <th className="px-3 py-2 text-center font-medium text-[#697386]">
+                          スコア
+                        </th>
+                        <th className="px-3 py-2 text-left font-medium text-[#697386]">
+                          判断
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#E6EBF1]">
+                      <tr>
+                        <td className="px-3 py-2 text-[#1A1F36]">山田 太郎</td>
+                        <td className="px-3 py-2 text-[#697386]">Backend</td>
+                        <td className="px-3 py-2 text-center text-[#1A1F36]">
+                          82
+                        </td>
+                        <td className="px-3 py-2 text-[#0070E0] text-xs">
+                          Strong Yes
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2 text-[#1A1F36]">
+                          Jane Doe
+                        </td>
+                        <td className="px-3 py-2 text-[#697386]">
+                          Full‑stack
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#1A1F36]">
+                          78
+                        </td>
+                        <td className="px-3 py-2 text-[#697386] text-xs">
+                          Yes
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="px-3 py-2 text-[#1A1F36]">
+                          佐藤 花子
+                        </td>
+                        <td className="px-3 py-2 text-[#697386]">
+                          Platform
+                        </td>
+                        <td className="px-3 py-2 text-center text-[#1A1F36]">
+                          71
+                        </td>
+                        <td className="px-3 py-2 text-[#697386] text-xs">
+                          Maybe
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="mt-3 text-[11px] text-[#697386]">
+                  {t("home.steps.aiAssistantLabel")} — 質問・スコアカード・評価一覧までを1つの画面から補助します。
+                </p>
               </Card>
             </div>
           </div>

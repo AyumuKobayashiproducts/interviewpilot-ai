@@ -27,12 +27,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={inputId}
           className={classNames(
-            "w-full px-4 py-2.5 rounded-xl border-2 transition-all duration-200",
-            "bg-white/80 backdrop-blur-sm",
-            "focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500",
+            "w-full px-3 py-2 rounded-md border text-sm",
+            "bg-white",
+            "focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 focus:border-[#635BFF]",
             error
-              ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-              : "border-slate-200 hover:border-slate-300",
+              ? "border-red-300 focus:border-red-500 focus:ring-red-500/30"
+              : "border-[#E6EBF1] hover:border-slate-300",
             className
           )}
           {...props}
@@ -52,6 +52,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 );
 
 Select.displayName = "Select";
+
+
+
+
+
+
+
+
 
 
 

@@ -60,13 +60,13 @@ function CandidatePageContent() {
   
   // 初期化完了フラグ
   const isInitialized = useRef(false);
-  // 前回の言語をトラック
-  const prevLanguageRef = useRef<Language>(language);
 
   // 初回ロード：roleProfile を sessionStorage から取得
   useEffect(() => {
     const stored = sessionStorage.getItem("roleProfile");
-    const storedLang = sessionStorage.getItem("roleProfileLanguage") as Language | null;
+    const storedLang = sessionStorage.getItem(
+      "roleProfileLanguage"
+    ) as Language | null;
     if (stored) {
       const parsedProfile = JSON.parse(stored) as RoleProfile;
       setRoleProfile(parsedProfile);
@@ -81,24 +81,22 @@ function CandidatePageContent() {
         // 推測した言語を保存
         sessionStorage.setItem("roleProfileLanguage", detectedLang);
       }
-      
+
+      // データ読み込み完了
       isInitialized.current = true;
     } else {
       router.push("/role");
     }
   }, [router]);
 
-  // 言語トグルが切り替わったら、roleProfile を再生成して翻訳する
+  // 言語トグルが切り替わったり、保存されている roleProfileLanguage と
+  // 現在の UI 言語が違う場合は、roleProfile を再生成して翻訳する
   useEffect(() => {
     // 初期化前は何もしない
     if (!isInitialized.current) return;
     if (!roleProfile || !roleProfileLanguage) return;
     if (!roleProfile.rawText) return;
-    
-    // 言語が実際に変わった場合のみ翻訳
-    if (language === prevLanguageRef.current) return;
-    prevLanguageRef.current = language;
-    
+
     // 保存されている言語と現在の言語が同じなら翻訳不要
     if (language === roleProfileLanguage) return;
 
@@ -148,7 +146,7 @@ function CandidatePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [language]);
+  }, [language, roleProfileLanguage, roleProfile]);
 
   const handleUseSample = () => {
     if (candidateText.trim()) {

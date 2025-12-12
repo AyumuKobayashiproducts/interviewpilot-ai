@@ -6,10 +6,10 @@ import { ReactNode } from "react";
 interface CardProps {
   children: ReactNode;
   className?: string;
-  variant?: "default" | "elevated" | "bordered" | "glass";
+  variant?: "default" | "muted";
   padding?: "none" | "sm" | "md" | "lg";
-  hover?: boolean;
-  style?: React.CSSProperties;
+  inset?: boolean;
+  header?: ReactNode;
 }
 
 export function Card({
@@ -17,35 +17,37 @@ export function Card({
   className,
   variant = "default",
   padding = "md",
-  hover = false,
-  style,
+  inset = false,
+  header,
 }: CardProps) {
   const variantStyles = {
-    default: "bg-white border border-slate-200/60",
-    elevated: "bg-white shadow-soft-lg",
-    bordered: "bg-white border-2 border-slate-200/80",
-    glass: "bg-white/60 backdrop-blur-xl border border-white/40 shadow-soft",
+    default: "bg-white border border-[#E6EBF1]",
+    muted: "bg-[#F6F9FC] border border-[#E6EBF1]",
   };
 
   const paddingStyles = {
     none: "",
     sm: "p-4",
-    md: "p-6",
-    lg: "p-8",
+    md: "p-5",
+    lg: "p-6",
   };
 
   return (
-    <div
+    <section
       className={classNames(
-        "rounded-2xl transition-all duration-300",
+        "rounded-lg",
+        inset ? "" : "shadow-sm",
         variantStyles[variant],
         paddingStyles[padding],
-        hover && "hover:shadow-soft-lg hover:-translate-y-0.5",
         className
       )}
-      style={style}
     >
+      {header && (
+        <header className="mb-3 flex items-center justify-between">
+          {header}
+        </header>
+      )}
       {children}
-    </div>
+    </section>
   );
 }

@@ -5,6 +5,16 @@ import { createClient } from "@supabase/supabase-js";
 export async function POST(request: NextRequest) {
   // Check if Stripe is configured
   if (!stripe || !isStripeConfigured()) {
+    const secret = process.env.STRIPE_SECRET_KEY || "";
+    if (secret && !secret.startsWith("sk_")) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid STRIPE_SECRET_KEY. 「開発者 → APIキー」のトークン列にある sk_test_... を STRIPE_SECRET_KEY に設定してください（mk_... はIDで、APIキーではありません）。",
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { error: "Stripe is not configured" },
       { status: 503 }
@@ -75,10 +85,12 @@ export async function POST(request: NextRequest) {
       cancel_url: `${origin}/pricing?checkout=cancelled`,
       metadata: {
         supabase_user_id: userId,
+        user_email: userEmail,
       },
       subscription_data: {
         metadata: {
           supabase_user_id: userId,
+          user_email: userEmail,
         },
       },
       allow_promotion_codes: true,
@@ -97,4 +109,15 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
 

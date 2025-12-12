@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Card, Button } from "@/components/ui";
@@ -18,13 +18,13 @@ type SubscriptionStatus = {
 };
 
 function SettingsPageContent() {
-  const { t, language } = useI18n();
-  const { user, session, signOut } = useAuth();
-  const router = useRouter();
+  const { t } = useI18n();
+  const { user, session } = useAuth();
   const searchParams = useSearchParams();
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   // Check for checkout success
   useEffect(() => {
@@ -54,8 +54,13 @@ function SettingsPageContent() {
     fetchSubscription();
   }, [user?.email]);
 
-  const handleDeleteAccount = async () => {
+  const handleScheduleDeletion = async () => {
     if (!user || !session) return;
+
+    if (deleteConfirmText.trim() !== "DELETE") {
+      alert("削除を確定するには、確認欄に DELETE と入力してください。");
+      return;
+    }
 
     const confirmed = window.confirm(t("settings.delete.confirm"));
     if (!confirmed) return;
@@ -76,11 +81,47 @@ function SettingsPageContent() {
         throw new Error(data.error || "Delete failed");
       }
 
-      alert(t("settings.delete.success"));
-      await signOut();
-      router.push("/login");
+      const data = await response.json().catch(() => ({}));
+      if (data?.email?.configured && data?.email?.sent) {
+        alert(t("settings.delete.scheduledEmailSent"));
+      } else if (data?.email?.configured && !data?.email?.sent) {
+        alert(t("settings.delete.scheduledEmailFailed"));
+      } else {
+        alert(t("settings.delete.scheduledEmailNotConfigured"));
+      }
+      window.location.reload();
     } catch (error) {
       console.error("Delete account error:", error);
+      alert(t("settings.delete.error"));
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    if (!user || !session) return;
+
+    const confirmed = window.confirm(t("settings.delete.cancelConfirm"));
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch("/api/account/delete/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: session.access_token }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 501) {
+          alert(t("settings.delete.notConfigured"));
+          return;
+        }
+        throw new Error(data.error || "Cancel failed");
+      }
+
+      alert(t("settings.delete.cancelled"));
+      window.location.reload();
+    } catch (error) {
+      console.error("Cancel deletion error:", error);
       alert(t("settings.delete.error"));
     }
   };
@@ -127,14 +168,25 @@ function SettingsPageContent() {
       : "Free";
 
   const statusLabel = subscription?.status === "active"
-    ? (language === "ja" ? "有効" : "Active")
+    ? "有効"
     : subscription?.status === "trialing"
-      ? (language === "ja" ? "トライアル中" : "Trial")
+      ? "トライアル中"
       : subscription?.status === "past_due"
-        ? (language === "ja" ? "支払い遅延" : "Past Due")
+        ? "支払い遅延"
         : subscription?.status === "cancelled"
-          ? (language === "ja" ? "解約済み" : "Cancelled")
-          : (language === "ja" ? "有効" : "Active");
+          ? "解約済み"
+          : "有効";
+
+  const deletionScheduledFor = (user.user_metadata as any)?.deletion_scheduled_for as
+    | string
+    | undefined;
+  const deletionRequestedAt = (user.user_metadata as any)?.deletion_requested_at as
+    | string
+    | undefined;
+  const deletionScheduledTs = deletionScheduledFor ? Date.parse(deletionScheduledFor) : NaN;
+  const hasDeletionSchedule = Number.isFinite(deletionScheduledTs);
+  const isDeletionScheduled = hasDeletionSchedule && deletionScheduledTs > Date.now();
+  const isDeletionDue = hasDeletionSchedule && deletionScheduledTs <= Date.now();
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -155,8 +207,34 @@ function SettingsPageContent() {
       )}
 
       <div className="space-y-6">
+        {hasDeletionSchedule && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <p className="text-sm font-medium">
+              {t("settings.delete.scheduledNoticeTitle")}
+              {isDeletionDue ? "（期限到来）" : ""}
+            </p>
+            <p className="mt-1 text-sm text-amber-800">
+              {t("settings.delete.scheduledNoticeBody")}{" "}
+              <span className="font-medium">
+                {new Date(deletionScheduledFor as string).toLocaleString()}
+              </span>
+            </p>
+            {isDeletionDue && (
+              <p className="mt-1 text-xs text-amber-800">
+                ※ 削除処理が実行され次第、完全削除されます。
+              </p>
+            )}
+            {deletionRequestedAt && (
+              <p className="mt-1 text-xs text-amber-700">
+                {t("settings.delete.requestedAt")}:{" "}
+                {new Date(deletionRequestedAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Account Info */}
-        <Card variant="glass" padding="lg">
+        <Card padding="lg">
           <h2 className="text-lg font-semibold text-slate-900 mb-3">
             {t("settings.account.heading")}
           </h2>
@@ -169,7 +247,7 @@ function SettingsPageContent() {
         </Card>
 
         {/* Subscription Info */}
-        <Card variant="glass" padding="lg">
+        <Card padding="lg">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">
             {t("settings.subscription.title")}
           </h2>
@@ -235,20 +313,44 @@ function SettingsPageContent() {
         </Card>
 
         {/* Danger Zone */}
-        <Card variant="bordered" padding="lg" className="border-red-200 bg-red-50">
+        <Card padding="lg" className="border border-red-200 bg-red-50">
           <h2 className="text-lg font-semibold text-red-800 mb-2">
             {t("settings.danger.title")}
           </h2>
           <p className="text-sm text-red-700 mb-4">
             {t("settings.danger.description")}
           </p>
-          <Button
-            variant="outline"
-            className="border-red-500 text-red-600 hover:bg-red-50"
-            onClick={handleDeleteAccount}
-          >
-            {t("settings.delete.button")}
-          </Button>
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-red-800 mb-1">
+              確認のため「DELETE」と入力してください
+            </label>
+            <input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETE"
+              className="w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="border-red-500 text-red-600 hover:bg-red-50"
+              onClick={handleScheduleDeletion}
+              disabled={deleteConfirmText.trim() !== "DELETE" || hasDeletionSchedule}
+            >
+              {hasDeletionSchedule ? t("settings.delete.scheduled") : t("settings.delete.button")}
+            </Button>
+            {hasDeletionSchedule && (
+              <Button
+                variant="outline"
+                className="border-slate-300 text-slate-700 hover:bg-white"
+                onClick={handleCancelDeletion}
+              >
+                {t("settings.delete.cancelButton")}
+              </Button>
+            )}
+          </div>
         </Card>
       </div>
     </div>

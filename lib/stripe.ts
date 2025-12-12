@@ -34,10 +34,15 @@ export type PlanType = keyof typeof PLAN_LIMITS;
 
 // Helper to check if Stripe is configured
 export function isStripeConfigured(): boolean {
-  return Boolean(
-    process.env.STRIPE_SECRET_KEY &&
-    process.env.STRIPE_PRICE_PRO_MONTHLY &&
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  );
+  const secret = process.env.STRIPE_SECRET_KEY;
+  const publishable = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const priceMonthly = process.env.STRIPE_PRICE_PRO_MONTHLY;
+
+  // Stripe API keys must be sk_* / pk_*
+  if (!secret || !secret.startsWith("sk_")) return false;
+  if (!publishable || !publishable.startsWith("pk_")) return false;
+  if (!priceMonthly || !priceMonthly.startsWith("price_")) return false;
+
+  return true;
 }
 

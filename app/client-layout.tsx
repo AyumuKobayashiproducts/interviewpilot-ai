@@ -8,7 +8,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
       <I18nProvider>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-[#F6F9FC]">
           <Header />
           <main className="flex-1">{children}</main>
           <footer className="border-t border-slate-200 bg-white/50 py-6">

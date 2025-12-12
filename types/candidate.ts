@@ -18,3 +18,14 @@ export interface CandidateAnalyzeResponse {
 
 
 
+
+
+
+
+
+
+
+
+
+
+

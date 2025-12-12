@@ -4,7 +4,7 @@ import { classNames } from "@/lib/utils";
 import { ReactNode, ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
   size?: "sm" | "md" | "lg";
   children: ReactNode;
   isLoading?: boolean;
@@ -20,23 +20,25 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]";
+    "inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variantStyles = {
     primary:
-      "bg-gradient-to-b from-primary-500 to-primary-600 text-white hover:from-primary-600 hover:to-primary-700 focus:ring-primary-500 shadow-lg shadow-primary-500/20 hover:shadow-primary-500/30",
+      "bg-[#635BFF] text-white hover:bg-[#4C46D4] focus:ring-[#635BFF]/40",
     secondary:
-      "bg-gradient-to-b from-slate-700 to-slate-800 text-white hover:from-slate-800 hover:to-slate-900 focus:ring-slate-500 shadow-lg shadow-slate-500/15",
+      "bg-slate-800 text-white hover:bg-slate-900 focus:ring-slate-600/40",
     outline:
-      "border-2 border-slate-200 text-slate-700 hover:border-primary-300 hover:text-primary-600 hover:bg-primary-50/50 focus:ring-primary-500 bg-white",
+      "border border-[#E6EBF1] bg-white text-slate-800 hover:bg-slate-50 focus:ring-[#635BFF]/30",
     ghost:
-      "text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-400",
+      "text-slate-700 hover:bg-slate-50 focus:ring-slate-300/40",
+    danger:
+      "bg-red-600 text-white hover:bg-red-700 focus:ring-red-600/40",
   };
 
   const sizeStyles = {
-    sm: "px-3.5 py-2 text-sm",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-7 py-3.5 text-base",
+    sm: "px-3 py-1.5 text-xs gap-1.5",
+    md: "px-3.5 py-2 text-sm gap-2",
+    lg: "px-4 py-2.5 text-sm gap-2",
   };
 
   return (
@@ -52,7 +54,7 @@ export function Button({
     >
       {isLoading && (
         <svg
-          className="animate-spin -ml-1 mr-2 h-4 w-4"
+          className="animate-spin h-4 w-4"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -63,7 +65,7 @@ export function Button({
             cy="12"
             r="10"
             stroke="currentColor"
-            strokeWidth="4"
+            strokeWidth="3"
           />
           <path
             className="opacity-75"

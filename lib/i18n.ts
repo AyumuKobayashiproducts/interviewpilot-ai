@@ -22,7 +22,9 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>("en");
+  // 日本語固定
+  const [language] = useState<Language>("ja");
+  const setLanguage = () => {}; // 無効化（互換性のため残す）
 
   const t = useCallback(
     (key: string): string => {
@@ -49,6 +51,17 @@ export function useI18n(): I18nContextType {
 export function getTranslation(language: Language, key: string): string {
   return translations[language][key] || key;
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

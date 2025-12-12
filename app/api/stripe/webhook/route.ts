@@ -8,6 +8,30 @@ function getSubscriptionPeriodEnd(sub: Stripe.Subscription): number | undefined 
   return (sub as unknown as { current_period_end?: number }).current_period_end;
 }
 
+function getSubscriptionCancelAtPeriodEnd(sub: Stripe.Subscription): boolean {
+  return (sub as unknown as { cancel_at_period_end?: boolean })
+    .cancel_at_period_end ?? false;
+}
+
+type SubscriptionRow = {
+  user_id: string;
+  user_email: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  plan: "free" | "pro" | "team";
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  updated_at: string;
+};
+
+function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
+
 // This endpoint must receive the raw body for signature verification
 export async function POST(request: NextRequest) {
   if (!stripe) {
@@ -48,35 +72,94 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Initialize Supabase admin client for database updates
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  
-  const supabase = supabaseUrl && supabaseServiceKey
-    ? createClient(supabaseUrl, supabaseServiceKey)
-    : null;
+  const supabase = getSupabaseAdmin();
 
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.supabase_user_id;
+        let userId = session.metadata?.supabase_user_id || "";
+        let userEmail =
+          session.metadata?.user_email || session.customer_details?.email || null;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
 
         console.log(`Checkout completed for user ${userId}, subscription ${subscriptionId}`);
 
-        // Update user's subscription status in database (if Supabase is configured)
         if (supabase && userId) {
-          // You would create a subscriptions table in Supabase
-          // For now, we log the event
-          console.log("Would update subscription in database:", {
+          const sub = subscriptionId
+            ? await stripe.subscriptions.retrieve(subscriptionId)
+            : null;
+          const periodEnd = sub ? getSubscriptionPeriodEnd(sub) : undefined;
+          const row: SubscriptionRow = {
             user_id: userId,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            status: "active",
+            user_email: userEmail,
+            stripe_customer_id: customerId || null,
+            stripe_subscription_id: subscriptionId || null,
             plan: "pro",
-          });
+            status: sub?.status || "active",
+            current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+            cancel_at_period_end: sub ? getSubscriptionCancelAtPeriodEnd(sub) : false,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error } = await supabase
+            .from("subscriptions")
+            .upsert(row, { onConflict: "user_id" });
+          if (error) {
+            console.error("Failed to upsert subscription:", error);
+            return NextResponse.json(
+              { error: "Failed to persist subscription" },
+              { status: 500 }
+            );
+          }
+        }
+        // If session metadata is missing (e.g., test fixtures), try to infer from customer metadata
+        if (supabase && !userId && customerId) {
+          try {
+            const customer = (await stripe.customers.retrieve(
+              customerId
+            )) as Stripe.Customer;
+            userId = customer.metadata?.supabase_user_id || "";
+            if (!userEmail) userEmail = customer.email || null;
+          } catch (e) {
+            console.warn("Failed to retrieve customer for inference:", e);
+          }
+        }
+
+        if (supabase && userId) {
+          const sub = subscriptionId
+            ? await stripe.subscriptions.retrieve(subscriptionId)
+            : null;
+          const periodEnd = sub ? getSubscriptionPeriodEnd(sub) : undefined;
+          const row: SubscriptionRow = {
+            user_id: userId,
+            user_email: userEmail,
+            stripe_customer_id: customerId || null,
+            stripe_subscription_id: subscriptionId || null,
+            plan: "pro",
+            status: sub?.status || "active",
+            current_period_end: periodEnd
+              ? new Date(periodEnd * 1000).toISOString()
+              : null,
+            cancel_at_period_end: sub ? getSubscriptionCancelAtPeriodEnd(sub) : false,
+            updated_at: new Date().toISOString(),
+          };
+
+          const { error } = await supabase
+            .from("subscriptions")
+            .upsert(row, { onConflict: "user_id" });
+          if (error) {
+            console.error("Failed to upsert subscription:", error);
+            return NextResponse.json(
+              { error: "Failed to persist subscription" },
+              { status: 500 }
+            );
+          }
+        } else if (!userId) {
+          console.warn(
+            "Skipping subscription upsert: supabase_user_id was not found on session/customer metadata."
+          );
         }
         break;
       }
@@ -88,14 +171,41 @@ export async function POST(request: NextRequest) {
 
         console.log(`Subscription ${subscription.id} updated to status: ${status}`);
 
-        // Update subscription status in database
         if (supabase) {
-          const periodEnd = getSubscriptionPeriodEnd(subscription);
-          console.log("Would update subscription status:", {
-            stripe_subscription_id: subscription.id,
-            status: status,
-            current_period_end: periodEnd ? new Date(periodEnd * 1000) : null,
-          });
+          let userId = subscription.metadata?.supabase_user_id || "";
+          const userEmail =
+            subscription.metadata?.user_email || null;
+
+          if (!userId && customerId) {
+            const customer = (await stripe.customers.retrieve(customerId)) as Stripe.Customer;
+            userId = customer.metadata?.supabase_user_id || "";
+          }
+
+          if (userId) {
+            const periodEnd = getSubscriptionPeriodEnd(subscription);
+            const row: SubscriptionRow = {
+              user_id: userId,
+              user_email: userEmail,
+              stripe_customer_id: customerId || null,
+              stripe_subscription_id: subscription.id || null,
+              plan: "pro",
+              status,
+              current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+              cancel_at_period_end: getSubscriptionCancelAtPeriodEnd(subscription),
+              updated_at: new Date().toISOString(),
+            };
+
+            const { error } = await supabase
+              .from("subscriptions")
+              .upsert(row, { onConflict: "user_id" });
+            if (error) {
+              console.error("Failed to upsert subscription:", error);
+              return NextResponse.json(
+                { error: "Failed to persist subscription" },
+                { status: 500 }
+              );
+            }
+          }
         }
         break;
       }
@@ -104,12 +214,41 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         console.log(`Subscription ${subscription.id} cancelled`);
 
-        // Mark subscription as cancelled in database
         if (supabase) {
-          console.log("Would mark subscription as cancelled:", {
-            stripe_subscription_id: subscription.id,
-            status: "cancelled",
-          });
+          const customerId = subscription.customer as string;
+          let userId = subscription.metadata?.supabase_user_id || "";
+          const userEmail = subscription.metadata?.user_email || null;
+
+          if (!userId && customerId) {
+            const customer = (await stripe.customers.retrieve(customerId)) as Stripe.Customer;
+            userId = customer.metadata?.supabase_user_id || "";
+          }
+
+          if (userId) {
+            // Cancellation completed: treat as free for gating.
+            const row: SubscriptionRow = {
+              user_id: userId,
+              user_email: userEmail,
+              stripe_customer_id: customerId || null,
+              stripe_subscription_id: subscription.id || null,
+              plan: "free",
+              status: "active",
+              current_period_end: null,
+              cancel_at_period_end: false,
+              updated_at: new Date().toISOString(),
+            };
+
+            const { error } = await supabase
+              .from("subscriptions")
+              .upsert(row, { onConflict: "user_id" });
+            if (error) {
+              console.error("Failed to upsert subscription:", error);
+              return NextResponse.json(
+                { error: "Failed to persist subscription" },
+                { status: 500 }
+              );
+            }
+          }
         }
         break;
       }

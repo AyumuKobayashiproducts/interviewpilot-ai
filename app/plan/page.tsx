@@ -37,10 +37,9 @@ function PlanPageContent() {
   });
   const [planLanguage, setPlanLanguage] = useState<Language | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
-  
-  // 初期化完了フラグと前回の言語をトラック
+
+  // 初期化完了フラグ
   const isInitialized = useRef(false);
-  const prevLanguageRef = useRef<Language>(language);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("interviewPlan");
@@ -51,7 +50,7 @@ function PlanPageContent() {
     if (stored) {
       const parsedPlan = JSON.parse(stored) as InterviewPlan;
       setPlan(parsedPlan);
-      
+
       // 言語が保存されていない場合は、テキストから推測する
       if (storedLang) {
         setPlanLanguage(storedLang);
@@ -62,23 +61,21 @@ function PlanPageContent() {
         // 推測した言語を保存
         sessionStorage.setItem("interviewPlanLanguage", detectedLang);
       }
-      
+
+      // データ読み込み完了
       isInitialized.current = true;
     } else {
       router.push("/role");
     }
   }, [router]);
 
-  // 言語トグルが切り替わったら、自動的にプランを再生成して翻訳する
+  // 言語トグルが切り替わったり、保存されている planLanguage と
+  // 現在の UI 言語が違う場合は、自動的にプランを再生成して翻訳する
   useEffect(() => {
     // 初期化前は何もしない
     if (!isInitialized.current) return;
     if (!plan || !planLanguage) return;
-    
-    // 言語が実際に変わった場合のみ翻訳
-    if (language === prevLanguageRef.current) return;
-    prevLanguageRef.current = language;
-    
+
     // 保存されている言語と現在の言語が同じなら翻訳不要
     if (language === planLanguage) return;
 
@@ -125,7 +122,7 @@ function PlanPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [language]);
+  }, [language, planLanguage, plan]);
 
   if (!plan) {
     return (
@@ -514,33 +511,33 @@ function PlanPageContent() {
 
       {/* Scorecard */}
       <Section title={t("plan.scorecard.title")} className="mb-10">
-        <Card variant="elevated" padding="none" className="overflow-hidden">
+        <Card variant="default" padding="md">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-200">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F6F9FC] border-b border-[#E6EBF1]">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-4 py-3 text-left font-medium text-[#1A1F36]">
                     {t("plan.scorecard.category")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900">
+                  <th className="px-4 py-3 text-left font-medium text-[#1A1F36]">
                     {t("plan.scorecard.description")}
                   </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900 w-32">
+                  <th className="px-4 py-3 text-center font-medium text-[#1A1F36] w-24">
                     {t("plan.scorecard.maxScore")}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#E6EBF1]">
                 {plan.scorecard.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-slate-900">
+                    <td className="px-4 py-3 text-[#1A1F36]">
                       {item.label}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 text-sm">
+                    <td className="px-4 py-3 text-slate-600">
                       {item.description}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary-100 text-primary-700 font-bold">
+                    <td className="px-4 py-3 text-center">
+                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-800 text-sm font-medium">
                         {item.maxScore}
                       </span>
                     </td>

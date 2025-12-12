@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { LanguageToggle } from "./LanguageToggle";
 import { AuthButton } from "./AuthButton";
 import { classNames } from "@/lib/utils";
 
@@ -13,6 +12,7 @@ const navItems = [
   { key: "nav.role", href: "/role" },
   { key: "nav.candidate", href: "/candidate" },
   { key: "nav.plan", href: "/plan" },
+  { key: "nav.results", href: "/results" },
   { key: "nav.pricing", href: "/pricing" },
 ];
 
@@ -68,9 +68,8 @@ export function Header() {
             </div>
           </nav>
 
-          {/* Right side: Language Toggle + Auth */}
+          {/* Right side: Auth */}
           <div className="flex items-center gap-2">
-            <LanguageToggle />
             <AuthButton />
           </div>
         </div>

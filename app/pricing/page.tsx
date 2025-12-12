@@ -140,26 +140,22 @@ export default function PricingPage() {
   const plans = [
     {
       key: "free",
-      price: language === "ja" ? "¥0" : "$0",
-      period: language === "ja" ? "/ 月" : "/ month",
+      price: "¥0",
+      period: "/ 月",
       highlight: false,
       cta: subscription?.plan === "free" ? "current" : "free",
     },
     {
       key: "pro",
-      price: billingPeriod === "yearly" 
-        ? (language === "ja" ? "¥39,000" : "$290")
-        : (language === "ja" ? "¥3,900" : "$29"),
-      period: billingPeriod === "yearly" 
-        ? (language === "ja" ? "/ 年" : "/ year")
-        : (language === "ja" ? "/ 月" : "/ month"),
+      price: billingPeriod === "yearly" ? "¥39,000" : "¥3,900",
+      period: billingPeriod === "yearly" ? "/ 年" : "/ 月",
       highlight: true,
-      savings: billingPeriod === "yearly" ? (language === "ja" ? "2ヶ月分お得" : "Save 2 months") : null,
+      savings: billingPeriod === "yearly" ? "2ヶ月分お得" : null,
       cta: subscription?.plan === "pro" ? "current" : "upgrade",
     },
     {
       key: "team",
-      price: language === "ja" ? "お問い合わせ" : "Contact us",
+      price: "お問い合わせ",
       period: "",
       highlight: false,
       cta: "contact",
@@ -342,9 +338,13 @@ export default function PricingPage() {
                 </a>
               ) : (
                 <Button
-                  variant={plan.highlight ? "secondary" : "primary"}
+                  variant={plan.highlight ? "outline" : "primary"}
                   size="lg"
-                  className={`w-full ${plan.highlight ? "bg-white text-slate-900 hover:bg-slate-100" : ""}`}
+                  className={`w-full ${
+                    plan.highlight
+                      ? "!bg-white !text-slate-900 hover:!bg-slate-100"
+                      : ""
+                  }`}
                   onClick={() => handleCheckout(plan.key)}
                   disabled={loading === plan.key}
                 >

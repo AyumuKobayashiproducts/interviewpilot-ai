@@ -18,12 +18,13 @@ function getOpenAIClient(): OpenAI {
 export async function generateCompletion(
   systemPrompt: string,
   userPrompt: string,
-  temperature: number = 0.7
+  temperature: number = 0.7,
+  model: string = "gpt-4o"
 ): Promise<string> {
   const openai = getOpenAIClient();
   
   const response = await openai.chat.completions.create({
-    model: "gpt-4o",
+    model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
