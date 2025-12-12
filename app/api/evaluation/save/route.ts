@@ -1,22 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateId } from "@/lib/utils";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { addEvaluation } from "@/lib/demo-store";
 import type { InterviewPlan } from "@/types";
-
-type StoredEvaluation = {
-  id: string;
-  userId: string | null;
-  language: "en" | "ja";
-  role_title: string | null;
-  candidate_name: string | null;
-  decision: string | null;
-  total_score: number | null;
-  created_at: string;
-  plan: InterviewPlan;
-};
-
-// 簡易インメモリ保存（Supabase未設定時のデモ用）
-const EVALUATIONS: StoredEvaluation[] = [];
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,9 +49,9 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      const row: StoredEvaluation = {
+      addEvaluation({
         id: generateId(),
-        userId,
+        user_id: userId,
         language,
         role_title: roleTitle,
         candidate_name: candidateName,
@@ -73,9 +59,7 @@ export async function POST(request: NextRequest) {
         total_score: totalScore,
         created_at: new Date().toISOString(),
         plan,
-      };
-
-      EVALUATIONS.push(row);
+      });
     }
 
     return NextResponse.json({ success: true });
@@ -87,17 +71,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-export function listEvaluations(userId?: string | null) {
-  if (isSupabaseConfigured()) {
-    // Supabase利用時はAPIルート内からのみ直接クエリする想定なので、
-    // ここではインメモリ分のみを返す（フォールバック専用）。
-    if (!userId) return EVALUATIONS;
-    return EVALUATIONS.filter((row) => row.userId === userId);
-  }
-
-  if (!userId) return EVALUATIONS;
-  return EVALUATIONS.filter((row) => row.userId === userId);
-}
-
-

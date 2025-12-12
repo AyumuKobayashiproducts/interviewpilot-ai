@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
-import { listInterviewPlans } from "../save/route";
+import { listInterviewPlans } from "@/lib/demo-store";
 
 export async function GET(request: NextRequest) {
   try {

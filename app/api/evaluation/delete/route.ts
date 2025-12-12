@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { deleteEvaluation } from "@/lib/demo-store";
 
 export async function POST(request: NextRequest) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ success: false, reason: "not_configured" });
-    }
 
     const { id } = await request.json();
 
@@ -17,6 +14,11 @@ export async function POST(request: NextRequest) {
         { success: false, reason: "missing_id" },
         { status: 400 }
       );
+    }
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      const ok = deleteEvaluation(id);
+      return NextResponse.json({ success: ok, reason: "not_configured" });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);

@@ -1,19 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateId } from "@/lib/utils";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
+import { addInterviewPlan } from "@/lib/demo-store";
 import type { InterviewPlan } from "@/types";
-
-type StoredInterviewPlan = {
-  id: string;
-  userId: string | null;
-  language: "en" | "ja";
-  role_title: string | null;
-  created_at: string;
-  plan: InterviewPlan;
-};
-
-// 簡易的なインメモリ保存（Supabase未設定時のデモ用）。サーバー再起動で消えます。
-const INTERVIEW_PLANS: StoredInterviewPlan[] = [];
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,16 +43,14 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      const row: StoredInterviewPlan = {
+      addInterviewPlan({
         id: generateId(),
-        userId,
+        user_id: userId,
         language,
         role_title: roleTitle,
         created_at: new Date().toISOString(),
         plan,
-      };
-
-      INTERVIEW_PLANS.push(row);
+      });
     }
 
     return NextResponse.json({ success: true });
@@ -75,18 +62,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-// 内部から参照できるようにエクスポート
-export function listInterviewPlans(userId?: string | null) {
-  if (isSupabaseConfigured()) {
-    // Supabase利用時はAPIルート内からのみ直接クエリする想定なので、
-    // ここではインメモリ分のみを返す（フォールバック専用）。
-    if (!userId) return INTERVIEW_PLANS;
-    return INTERVIEW_PLANS.filter((row) => row.userId === userId);
-  }
-
-  if (!userId) return INTERVIEW_PLANS;
-  return INTERVIEW_PLANS.filter((row) => row.userId === userId);
-}
-
-

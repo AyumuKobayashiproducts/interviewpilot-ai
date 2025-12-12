@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { listEvaluations } from "@/lib/demo-store";
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,7 +8,12 @@ export async function GET(request: NextRequest) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ evaluations: [], reason: "not_configured" });
+      const { searchParams } = new URL(request.url);
+      const userId = searchParams.get("userId");
+      return NextResponse.json({
+        evaluations: listEvaluations(userId),
+        reason: "not_configured",
+      });
     }
 
     const { searchParams } = new URL(request.url);
