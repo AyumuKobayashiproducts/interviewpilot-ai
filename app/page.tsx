@@ -126,21 +126,21 @@ export default function HomePage() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
             {features.map((feature, index) => (
-              <Card
+              <div
                 key={feature.titleKey}
-                variant="glass"
-                hover
-                className={`text-center animate-fade-in-up`}
+                className="animate-fade-in-up"
                 style={{ animationDelay: `${(index + 1) * 100}ms` } as React.CSSProperties}
               >
-                <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center shadow-lg shadow-primary-500/25">
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                  {t(feature.titleKey)}
-                </h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{t(feature.descKey)}</p>
-              </Card>
+                <Card className="bg-white/80 backdrop-blur-sm text-center hover:shadow-lg transition-shadow h-full">
+                  <div className="w-14 h-14 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary-500 to-accent-500 text-white flex items-center justify-center shadow-lg shadow-primary-500/25">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    {t(feature.titleKey)}
+                  </h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">{t(feature.descKey)}</p>
+                </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -289,7 +289,7 @@ export default function HomePage() {
       {/* About Section */}
       <section className="py-16 border-t border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card variant="glass" className="p-8 md:p-10">
+          <Card className="bg-white/80 backdrop-blur-sm p-8 md:p-10">
             <h2 className="text-2xl font-bold text-slate-900 mb-4">
               {t("home.about.title")}
             </h2>

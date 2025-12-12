@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[calc(100vh-12rem)] flex items-center justify-center px-4 py-12">
-      <Card variant="glass" padding="lg" className="max-w-md w-full">
+      <Card padding="lg" className="bg-white/80 backdrop-blur-sm max-w-md w-full">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/30">

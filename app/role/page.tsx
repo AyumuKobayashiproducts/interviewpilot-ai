@@ -173,7 +173,7 @@ function RolePageContent() {
         <p className="text-lg text-slate-600">{t("role.subheading")}</p>
       </div>
 
-      <Card variant="glass" padding="lg" className="space-y-6">
+      <Card padding="lg" className="bg-white/80 backdrop-blur-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <p className="text-sm text-slate-500">
             {t("role.tips.leadingText")}

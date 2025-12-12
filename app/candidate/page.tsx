@@ -272,7 +272,7 @@ function CandidatePageContent() {
       </div>
 
       {/* Role Summary */}
-      <Card variant="bordered" padding="md" className="mb-6">
+      <Card padding="md" className="mb-6 border border-slate-200">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center flex-shrink-0">
             <svg
@@ -301,7 +301,7 @@ function CandidatePageContent() {
         </div>
       </Card>
 
-      <Card variant="glass" padding="lg" className="space-y-6">
+      <Card padding="lg" className="bg-white/80 backdrop-blur-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <p className="text-sm text-slate-500">
             {t("candidate.tips.leadingText")}

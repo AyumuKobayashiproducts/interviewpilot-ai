@@ -238,9 +238,8 @@ function PlanPageContent() {
 
       {/* Summary Card */}
       <Card
-        variant="elevated"
         padding="lg"
-        className="mb-8 bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-100"
+        className="mb-8 bg-gradient-to-r from-primary-50 to-accent-50 border border-primary-100 shadow-md"
       >
         <h2 className="text-lg font-semibold text-slate-900 mb-2">
           {t("plan.summary.title")}
@@ -278,7 +277,7 @@ function PlanPageContent() {
 
       {/* Role & Candidate Summary */}
       <div className="grid md:grid-cols-2 gap-4 mb-10">
-        <Card variant="bordered" padding="md">
+        <Card padding="md" className="border border-slate-200">
           <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
             <span className="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
               <svg
@@ -322,7 +321,7 @@ function PlanPageContent() {
         </Card>
 
         {plan.candidateProfile && (
-          <Card variant="bordered" padding="md">
+          <Card padding="md" className="border border-slate-200">
             <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
               <span className="w-8 h-8 rounded-lg bg-accent-100 text-accent-600 flex items-center justify-center">
                 <svg
@@ -417,9 +416,8 @@ function PlanPageContent() {
                     {questions.map((question, index) => (
                       <Card
                         key={question.id}
-                        variant="elevated"
                         padding="md"
-                        className="hover:shadow-xl transition-shadow"
+                        className="shadow-md hover:shadow-xl transition-shadow"
                       >
                         <div className="flex gap-4">
                           <span className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 text-slate-600 font-semibold text-sm flex items-center justify-center">
@@ -551,7 +549,7 @@ function PlanPageContent() {
 
       {/* Interviewer Notes */}
       <Section title={t("plan.notes.title")} className="mb-10">
-        <Card variant="bordered" padding="lg" className="bg-amber-50 border-amber-200">
+        <Card padding="lg" className="bg-amber-50 border border-amber-200">
           <div className="flex gap-3">
             <svg
               className="w-6 h-6 text-amber-600 flex-shrink-0"
