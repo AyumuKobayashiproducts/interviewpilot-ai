@@ -15,6 +15,7 @@ export interface RoleProfile {
 
 export interface RoleAnalyzeRequest {
   jobDescription: string;
+  hiringPreferences?: string;
   language: "en" | "ja";
 }
 

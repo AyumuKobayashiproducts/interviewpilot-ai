@@ -41,6 +41,20 @@ function PlanPageContent() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [savedPlanMeta, setSavedPlanMeta] = useState<{
+    id: string;
+    created_at?: string | null;
+  } | null>(null);
+  const [savedPlans, setSavedPlans] = useState<
+    Array<{
+      id: string;
+      created_at: string;
+      language: "en" | "ja";
+      role_title: string | null;
+      plan: InterviewPlan;
+    }>
+  >([]);
+  const [isLoadingSavedPlans, setIsLoadingSavedPlans] = useState(false);
 
   const localizeScorecardLabel = (label: string): string => {
     const normalized = (label || "").trim().toLowerCase();
@@ -98,6 +112,9 @@ function PlanPageContent() {
       }
 
       setSaveMessage("面接プランを保存しました。");
+      if (data?.id) {
+        setSavedPlanMeta({ id: data.id, created_at: data.created_at ?? null });
+      }
     } catch (e) {
       console.error("Failed to save interview plan:", e);
       const msg =
@@ -106,6 +123,42 @@ function PlanPageContent() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  useEffect(() => {
+    if (!isConfigured || !user || !session?.access_token) return;
+    let cancelled = false;
+
+    const load = async () => {
+      setIsLoadingSavedPlans(true);
+      try {
+        const res = await fetch("/api/interview/list", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        setSavedPlans(Array.isArray(data?.plans) ? data.plans : []);
+      } finally {
+        if (!cancelled) setIsLoadingSavedPlans(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [isConfigured, user?.id, session?.access_token]);
+
+  const openSavedPlan = (p: InterviewPlan) => {
+    setPlan(p);
+    const detectedLang = detectPlanLanguage(p);
+    setPlanLanguage(detectedLang);
+    sessionStorage.setItem("interviewPlan", JSON.stringify(p));
+    sessionStorage.setItem("interviewPlanLanguage", detectedLang);
+    setSaveMessage(null);
+    setSavedPlanMeta(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // 初期化完了フラグ
@@ -666,6 +719,59 @@ function PlanPageContent() {
         <p className="mt-3 text-center text-sm text-slate-600 no-print">
           {saveMessage}
         </p>
+      )}
+      {savedPlanMeta?.id && (
+        <div className="mt-3 flex justify-center gap-2 no-print">
+          <Link
+            href="/results"
+            className="text-sm font-medium text-primary-600 hover:text-primary-700"
+          >
+            評価一覧へ →
+          </Link>
+        </div>
+      )}
+
+      {/* Saved plans */}
+      {isConfigured && user && (
+        <div className="mt-10 no-print">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-900">
+              保存済みの面接プラン
+            </h3>
+            {isLoadingSavedPlans && (
+              <span className="text-xs text-slate-500">読み込み中...</span>
+            )}
+          </div>
+          {savedPlans.length === 0 ? (
+            <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+              まだ保存済みプランがありません。「面接プランを保存」を押すとここに表示されます。
+            </div>
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-white overflow-hidden">
+              <ul className="divide-y divide-slate-100">
+                {savedPlans.slice(0, 5).map((row) => (
+                  <li key={row.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-900 truncate">
+                        {row.role_title || "（職種未入力）"}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {new Date(row.created_at).toLocaleString()} ・ {row.language === "ja" ? "日本語" : "English"}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openSavedPlan(row.plan)}
+                    >
+                      開く
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Progress indicator */}

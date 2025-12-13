@@ -151,7 +151,8 @@ function RolePageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobDescription: combinedText,
+          jobDescription: jobDescription.trim(),
+          hiringPreferences: hiringPreferences.trim() || undefined,
           language,
         }),
       });

@@ -20,12 +20,12 @@ export async function POST(request: NextRequest) {
         ? "全ての出力は自然な日本語（人事担当者向けのビジネス日本語）で生成してください。"
         : "Generate all output in natural business English.";
 
-    const systemPrompt = `You are an expert HR professional and hiring manager. Your task is to analyze job descriptions and extract structured information.
+    const systemPrompt = `You are an expert HR professional and hiring manager. Your task is to analyze the provided text (job description + optional hiring priorities) and extract structured information.
 
 ${languageInstruction}
 
 Guidelines:
-- Extract only information that is clearly stated or reasonably inferred from the job description
+- Extract only information that is clearly stated or reasonably inferred from the provided text (job description + hiring priorities)
 - Do not invent technologies, skills, or requirements that are not plausible from the text
 - Be precise and professional in your summaries
 - evaluationCriteria should be specific metrics or qualities to assess candidates on
@@ -40,10 +40,17 @@ You must respond with valid JSON matching this exact structure:
   "evaluationCriteria": ["string array"]
 }`;
 
-    const userPrompt = `Please analyze the following job description and extract structured information:
+    const analysisText = [
+      `Job Description:\n${body.jobDescription}`,
+      body.hiringPreferences?.trim()
+        ? `\n\nHiring priorities / ideal candidate (optional):\n${body.hiringPreferences.trim()}`
+        : "",
+    ].join("");
+
+    const userPrompt = `Please analyze the following input and extract structured information:
 
 ---
-${body.jobDescription}
+${analysisText}
 ---
 
 Extract:
@@ -65,7 +72,7 @@ Extract:
       niceToHaveSkills: parsed.niceToHaveSkills || [],
       responsibilities: parsed.responsibilities || [],
       evaluationCriteria: parsed.evaluationCriteria || [],
-      rawText: body.jobDescription,
+      rawText: analysisText,
     };
 
     return NextResponse.json({ roleProfile });

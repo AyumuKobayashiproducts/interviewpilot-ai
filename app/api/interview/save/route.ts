@@ -67,13 +67,18 @@ export async function POST(request: NextRequest) {
         userId = userIdFromBody;
       }
 
-      const { error } = await supabaseAdmin.from("interview_plans").insert({
-        id: generateId(),
-        user_id: userId,
-        language,
-        role_title: roleTitle,
-        plan,
-      });
+      const id = generateId();
+      const { data, error } = await supabaseAdmin
+        .from("interview_plans")
+        .insert({
+          id,
+          user_id: userId,
+          language,
+          role_title: roleTitle,
+          plan,
+        })
+        .select("id, created_at")
+        .single();
 
       if (error) {
         console.error("Supabase interview_plans insert error:", error);
@@ -82,18 +87,26 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      return NextResponse.json({
+        success: true,
+        user_id: userId,
+        id: data?.id ?? id,
+        created_at: (data as any)?.created_at ?? null,
+      });
     } else {
+      const id = generateId();
+      const created_at = new Date().toISOString();
       addInterviewPlan({
-        id: generateId(),
+        id,
         user_id: userIdFromBody,
         language,
         role_title: roleTitle,
-        created_at: new Date().toISOString(),
+        created_at,
         plan,
       });
+      return NextResponse.json({ success: true, id, created_at });
     }
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("interview/save error:", error);
     return NextResponse.json(
