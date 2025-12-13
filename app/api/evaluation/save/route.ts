@@ -3,12 +3,19 @@ import { generateId } from "@/lib/utils";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase";
 import { addEvaluation } from "@/lib/demo-store";
 import type { InterviewPlan } from "@/types";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const userId: string | null = body.userId ?? null;
+    const authHeader = request.headers.get("authorization") || "";
+    const bearer =
+      authHeader.toLowerCase().startsWith("bearer ")
+        ? authHeader.slice(7).trim()
+        : "";
+    const accessToken: string | null = bearer || body.accessToken ?? null;
+    const userIdFromBody: string | null = body.userId ?? null;
     const language: "en" | "ja" = body.language === "ja" ? "ja" : "en";
     const roleTitle: string | null = body.roleTitle ?? null;
     const candidateName: string | null = body.candidateName ?? null;
@@ -25,12 +32,43 @@ export async function POST(request: NextRequest) {
     }
 
     if (isSupabaseConfigured()) {
-      const client = getSupabaseClient();
-      if (!client) {
-        throw new Error("Supabase client not available");
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+      if (!supabaseUrl || !supabaseServiceKey) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "サーバー側の保存設定（SUPABASE_SERVICE_ROLE_KEY）が未設定です。",
+          },
+          { status: 501 }
+        );
       }
 
-      const { error } = await client.from("interview_evaluations").insert({
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      });
+
+      let userId: string | null = null;
+      if (accessToken) {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabaseAdmin.auth.getUser(accessToken);
+
+        if (userError || !user) {
+          return NextResponse.json(
+            { success: false, error: "Unauthorized" },
+            { status: 401 }
+          );
+        }
+        userId = user.id;
+      } else {
+        userId = userIdFromBody;
+      }
+
+      const { error } = await supabaseAdmin.from("interview_evaluations").insert({
         id: generateId(),
         user_id: userId,
         language,
@@ -51,7 +89,7 @@ export async function POST(request: NextRequest) {
     } else {
       addEvaluation({
         id: generateId(),
-        user_id: userId,
+        user_id: userIdFromBody,
         language,
         role_title: roleTitle,
         candidate_name: candidateName,

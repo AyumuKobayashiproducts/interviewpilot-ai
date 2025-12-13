@@ -56,6 +56,7 @@ function RolePageContent() {
   const router = useRouter();
 
   const [jobDescription, setJobDescription] = useState("");
+  const [hiringPreferences, setHiringPreferences] = useState("");
   const [roleTitle, setRoleTitle] = useState("");
   const [level, setLevel] = useState<RoleLevel>("unspecified");
   const [isLoading, setIsLoading] = useState(false);
@@ -103,12 +104,22 @@ function RolePageContent() {
             : "senior";
 
         setJobDescription(sampleText);
+        setHiringPreferences(
+          isJa
+            ? `【採用したい人物像 / 重視する点】\n- スピードよりも品質と保守性を優先できる\n- 要件の曖昧さを言語化し、関係者と合意形成できる\n- 既存コードを読み解いて段階的に改善できる\n\n【NG】\n- レビューで指摘されると反発する\n- 仕様の背景を理解せずに実装だけを急ぐ`
+            : `Ideal candidate / priorities:\n- Prioritizes maintainability and quality over speed\n- Can clarify ambiguous requirements and align stakeholders\n- Improves legacy code incrementally\n\nRed flags:\n- Defensive during reviews\n- Ships without understanding the rationale`
+        );
         setRoleTitle(sampleTitle);
         setLevel(sampleLevel);
       })
       .catch(() => {
         // フォールバックとしてローカルのサンプルを使用
         setJobDescription(isJa ? SAMPLE_JD_JA : SAMPLE_JD_EN);
+        setHiringPreferences(
+          isJa
+            ? `【採用したい人物像 / 重視する点】\n- スピードよりも品質と保守性を優先できる\n- 要件の曖昧さを言語化し、関係者と合意形成できる\n\n【NG】\n- レビューで指摘されると反発する`
+            : `Ideal candidate / priorities:\n- Prioritizes maintainability and quality over speed\n- Can clarify ambiguous requirements and align stakeholders`
+        );
         setRoleTitle(
           isJa ? "シニアソフトウェアエンジニア" : "Senior Software Engineer"
         );
@@ -129,11 +140,18 @@ function RolePageContent() {
     setError("");
 
     try {
+      const combinedText = [
+        jobDescription.trim(),
+        hiringPreferences.trim()
+          ? `\n\n# 採用したい人物像・重視する点（任意）\n${hiringPreferences.trim()}`
+          : "",
+      ].join("");
+
       const response = await fetch("/api/role/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobDescription,
+          jobDescription: combinedText,
           language,
         }),
       });
@@ -147,7 +165,8 @@ function RolePageContent() {
         ...data.roleProfile,
         title: roleTitle || data.roleProfile.title,
         level: level !== "unspecified" ? level : data.roleProfile.level,
-        rawText: jobDescription,
+        hiringPreferences: hiringPreferences.trim() ? hiringPreferences.trim() : undefined,
+        rawText: combinedText,
       };
 
       // Store in sessionStorage for the next page
@@ -203,12 +222,48 @@ function RolePageContent() {
         </div>
 
         <TextArea
+          label={t("role.jobDescription.label")}
           placeholder={t("role.placeholder")}
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
           rows={12}
           error={error && !jobDescription.trim() ? error : undefined}
         />
+
+        <TextArea
+          label={t("role.preferences.label")}
+          placeholder={t("role.preferences.placeholder")}
+          value={hiringPreferences}
+          onChange={(e) => setHiringPreferences(e.target.value)}
+          rows={6}
+        />
+        <div className="flex flex-wrap items-center gap-2 -mt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setHiringPreferences((prev) => {
+                if (prev.trim()) return prev;
+                return `【採用したい人物像 / 重視する点】\n- 入社後90日で期待する成果\n- 重要視する経験（例：リファクタリング、移行、運用改善）\n- 仕事の進め方（例：合意形成、ドキュメント、レビュー文化）\n\n【NG】\n- レビューで指摘されると反発する\n- 仕様の背景を理解せずに実装だけを急ぐ`;
+              });
+            }}
+          >
+            テンプレを挿入
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setHiringPreferences("")}
+            disabled={!hiringPreferences.trim()}
+          >
+            クリア
+          </Button>
+          <span className="text-xs text-slate-500">
+            ここに書いた内容が、評価観点と質問設計に反映されます。
+          </span>
+        </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <Input

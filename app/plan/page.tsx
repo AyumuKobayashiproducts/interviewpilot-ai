@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useI18n, Language } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
 import { Button, Card, Section } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth";
 import { InterviewPlan, InterviewQuestion, QuestionCategory } from "@/types";
@@ -26,6 +27,7 @@ function detectPlanLanguage(plan: InterviewPlan): Language {
 function PlanPageContent() {
   const { t, language } = useI18n();
   const router = useRouter();
+  const { user, session, isConfigured } = useAuth();
 
   const [plan, setPlan] = useState<InterviewPlan | null>(null);
   const [openSections, setOpenSections] = useState<
@@ -37,6 +39,74 @@ function PlanPageContent() {
   });
   const [planLanguage, setPlanLanguage] = useState<Language | null>(null);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const localizeScorecardLabel = (label: string): string => {
+    const normalized = (label || "").trim().toLowerCase();
+    const map: Record<string, string> = {
+      communication: "コミュニケーション",
+      "technical fit": "技術適合",
+      "problem solving": "問題解決",
+      "ownership/initiative": "オーナーシップ／主体性",
+      "ownership / initiative": "オーナーシップ／主体性",
+      teamwork: "チームワーク",
+      "culture fit": "カルチャーフィット",
+      "overall recommendation": "総合推薦",
+    };
+    return map[normalized] || label;
+  };
+
+  const handleSavePlan = async () => {
+    if (!plan) return;
+    if (isConfigured && !user) {
+      setSaveMessage("保存するにはログインが必要です。");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveMessage(null);
+
+    try {
+      const res = await fetch("/api/interview/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token
+            ? { Authorization: `Bearer ${session.access_token}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          accessToken: session?.access_token ?? null,
+          userId: user?.id ?? null,
+          language,
+          roleTitle: plan.roleProfile?.title ?? null,
+          plan,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.success === false) {
+        const msg =
+          data?.error ||
+          (res.status === 401
+            ? "認証に失敗しました。再ログインしてください。"
+            : res.status === 501
+              ? "保存機能のサーバー設定が未完了です（管理者キー未設定）。"
+              : "保存に失敗しました。");
+        throw new Error(msg);
+      }
+
+      setSaveMessage("面接プランを保存しました。");
+    } catch (e) {
+      console.error("Failed to save interview plan:", e);
+      const msg =
+        e instanceof Error && e.message ? e.message : "保存に失敗しました。";
+      setSaveMessage(msg);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // 初期化完了フラグ
   const isInitialized = useRef(false);
@@ -529,7 +599,7 @@ function PlanPageContent() {
                 {plan.scorecard.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3 text-[#1A1F36]">
-                      {item.label}
+                      {localizeScorecardLabel(item.label)}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {item.description}
@@ -571,6 +641,13 @@ function PlanPageContent() {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6 no-print">
+        <Button
+          variant="primary"
+          onClick={handleSavePlan}
+          disabled={isSaving || (isConfigured && !user)}
+        >
+          {isSaving ? "保存中..." : "面接プランを保存"}
+        </Button>
         <Button variant="outline" onClick={startOver}>
           {t("plan.startOver")}
         </Button>
@@ -585,6 +662,11 @@ function PlanPageContent() {
           {t("plan.export")}
         </Button>
       </div>
+      {saveMessage && (
+        <p className="mt-3 text-center text-sm text-slate-600 no-print">
+          {saveMessage}
+        </p>
+      )}
 
       {/* Progress indicator */}
       <div className="flex justify-center mt-8 gap-2 no-print">
