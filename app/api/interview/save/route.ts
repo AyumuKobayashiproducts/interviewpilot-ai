@@ -48,23 +48,31 @@ export async function POST(request: NextRequest) {
         auth: { autoRefreshToken: false, persistSession: false },
       });
 
-      let userId: string | null = null;
-      if (accessToken) {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabaseAdmin.auth.getUser(accessToken);
+      if (!accessToken) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
 
-        if (userError || !user) {
-          return NextResponse.json(
-            { success: false, error: "Unauthorized" },
-            { status: 401 }
-          );
-        }
-        userId = user.id;
-      } else {
-        // Supabase未設定デモ時の互換用。実運用では accessToken を送る。
-        userId = userIdFromBody;
+      const {
+        data: { user },
+        error: userError,
+      } = await supabaseAdmin.auth.getUser(accessToken);
+
+      if (userError || !user) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+
+      const userId = user.id;
+      if (userIdFromBody && userIdFromBody !== userId) {
+        return NextResponse.json(
+          { success: false, error: "User mismatch" },
+          { status: 400 }
+        );
       }
 
       const id = generateId();

@@ -55,6 +55,7 @@ function PlanPageContent() {
     }>
   >([]);
   const [isLoadingSavedPlans, setIsLoadingSavedPlans] = useState(false);
+  const [savedPlansError, setSavedPlansError] = useState<string | null>(null);
 
   const localizeScorecardLabel = (label: string): string => {
     const normalized = (label || "").trim().toLowerCase();
@@ -114,7 +115,16 @@ function PlanPageContent() {
       setSaveMessage("面接プランを保存しました。");
       if (data?.id) {
         setSavedPlanMeta({ id: data.id, created_at: data.created_at ?? null });
+        // 現在表示中のプランにも id を反映（保存済み状態の判定に使える）
+        setPlan((prev) => (prev ? { ...prev, id: data.id } : prev));
+        const stored = sessionStorage.getItem("interviewPlan");
+        if (stored) {
+          const parsed = JSON.parse(stored) as InterviewPlan;
+          sessionStorage.setItem("interviewPlan", JSON.stringify({ ...parsed, id: data.id }));
+        }
       }
+      // 保存後に一覧を更新
+      await loadSavedPlans();
     } catch (e) {
       console.error("Failed to save interview plan:", e);
       const msg =
@@ -125,29 +135,32 @@ function PlanPageContent() {
     }
   };
 
-  useEffect(() => {
+  const loadSavedPlans = async () => {
     if (!isConfigured || !user || !session?.access_token) return;
-    let cancelled = false;
-
-    const load = async () => {
-      setIsLoadingSavedPlans(true);
-      try {
-        const res = await fetch("/api/interview/list", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        setSavedPlans(Array.isArray(data?.plans) ? data.plans : []);
-      } finally {
-        if (!cancelled) setIsLoadingSavedPlans(false);
+    setIsLoadingSavedPlans(true);
+    setSavedPlansError(null);
+    try {
+      const res = await fetch("/api/interview/list", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 401) {
+          setSavedPlansError("保存済みプランの取得に失敗しました。再ログインしてください。");
+        } else {
+          setSavedPlansError(data?.error || "保存済みプランの取得に失敗しました。");
+        }
+        return;
       }
-    };
+      setSavedPlans(Array.isArray(data?.plans) ? data.plans : []);
+    } finally {
+      setIsLoadingSavedPlans(false);
+    }
+  };
 
-    load();
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    loadSavedPlans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConfigured, user?.id, session?.access_token]);
 
   const openSavedPlan = (p: InterviewPlan) => {
@@ -356,6 +369,13 @@ function PlanPageContent() {
         <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-3">
           {t("plan.heading")}
         </h1>
+        {plan.id && (
+          <div className="mb-2 flex justify-center">
+            <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+              保存済み
+            </span>
+          </div>
+        )}
         <p className="text-lg text-slate-600">{t("plan.subheading")}</p>
       </div>
 
@@ -742,6 +762,11 @@ function PlanPageContent() {
               <span className="text-xs text-slate-500">読み込み中...</span>
             )}
           </div>
+          {savedPlansError && (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              {savedPlansError}
+            </div>
+          )}
           {savedPlans.length === 0 ? (
             <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
               まだ保存済みプランがありません。「面接プランを保存」を押すとここに表示されます。

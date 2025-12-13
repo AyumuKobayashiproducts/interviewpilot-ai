@@ -29,27 +29,26 @@ export async function GET(request: NextRequest) {
         ? authHeader.slice(7).trim()
         : "";
 
-    // 本人確認（token優先）。なければ userId クエリにフォールバック（デモ/互換用）。
+    // 本人確認（token必須）
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    let userId: string | null = null;
-    if (bearer) {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabaseAdmin.auth.getUser(bearer);
-      if (userError || !user) {
-        return NextResponse.json({ plans: [], error: "Unauthorized" }, { status: 401 });
-      }
-      userId = user.id;
-    } else {
-      userId = userIdParam;
+    if (!bearer) {
+      return NextResponse.json({ plans: [], error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!userId) {
-      return NextResponse.json({ plans: [], error: "Missing user" }, { status: 400 });
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(bearer);
+    if (userError || !user) {
+      return NextResponse.json({ plans: [], error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
+    if (userIdParam && userIdParam !== userId) {
+      return NextResponse.json({ plans: [], error: "User mismatch" }, { status: 400 });
     }
 
     const { data, error } = await supabaseAdmin
