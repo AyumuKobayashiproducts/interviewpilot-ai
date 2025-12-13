@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useI18n, Language } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
-import { Button, Card, Section } from "@/components/ui";
+import { Button, Card, Section, Input, Select } from "@/components/ui";
 import { ProtectedRoute } from "@/components/auth";
 import { InterviewPlan, InterviewQuestion, QuestionCategory } from "@/types";
 
@@ -56,6 +56,12 @@ function PlanPageContent() {
   >([]);
   const [isLoadingSavedPlans, setIsLoadingSavedPlans] = useState(false);
   const [savedPlansError, setSavedPlansError] = useState<string | null>(null);
+
+  const [candidateName, setCandidateName] = useState("");
+  const [decision, setDecision] = useState<"strong_yes" | "yes" | "maybe" | "no" | "">("");
+  const [scoresByItemId, setScoresByItemId] = useState<Record<string, number | "">>({});
+  const [isSavingEvaluation, setIsSavingEvaluation] = useState(false);
+  const [evaluationMessage, setEvaluationMessage] = useState<string | null>(null);
 
   const localizeScorecardLabel = (label: string): string => {
     const normalized = (label || "").trim().toLowerCase();
@@ -132,6 +138,85 @@ function PlanPageContent() {
       setSaveMessage(msg);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // 評価フォーム初期化（プランが変わったら初期化）
+  useEffect(() => {
+    if (!plan) return;
+    setCandidateName(plan.candidateProfile?.name || "");
+    setDecision("");
+    setEvaluationMessage(null);
+    const initial: Record<string, number | ""> = {};
+    plan.scorecard.forEach((i) => {
+      initial[i.id] = "";
+    });
+    setScoresByItemId(initial);
+  }, [plan]);
+
+  const totalMaxScore = plan?.scorecard?.reduce((sum, i) => sum + (i.maxScore || 0), 0) || 0;
+  const totalScore = plan?.scorecard?.reduce((sum, i) => {
+    const v = scoresByItemId[i.id];
+    return sum + (typeof v === "number" ? v : 0);
+  }, 0) || 0;
+  const isScoreComplete = plan?.scorecard?.every((i) => typeof scoresByItemId[i.id] === "number") ?? false;
+
+  const handleSaveEvaluation = async () => {
+    if (!plan) return;
+    if (isConfigured && (!user || !session?.access_token)) {
+      setEvaluationMessage("評価を保存するにはログインが必要です。");
+      return;
+    }
+    if (!candidateName.trim()) {
+      setEvaluationMessage("候補者名を入力してください。");
+      return;
+    }
+    if (!decision) {
+      setEvaluationMessage("判断を選択してください。");
+      return;
+    }
+    if (!isScoreComplete) {
+      setEvaluationMessage("各項目のスコア（0〜5）を入力してください。");
+      return;
+    }
+
+    setIsSavingEvaluation(true);
+    setEvaluationMessage(null);
+    try {
+      const res = await fetch("/api/evaluation/save", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session!.access_token}`,
+        },
+        body: JSON.stringify({
+          userId: user?.id ?? null,
+          language,
+          roleTitle: plan.roleProfile?.title ?? null,
+          candidateName: candidateName.trim(),
+          decision,
+          totalScore,
+          plan,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.success === false) {
+        const msg =
+          data?.error ||
+          (res.status === 401
+            ? "認証に失敗しました。再ログインしてください。"
+            : res.status === 501
+              ? "保存機能のサーバー設定が未完了です（管理者キー未設定）。"
+              : "評価の保存に失敗しました。");
+        throw new Error(msg);
+      }
+
+      setEvaluationMessage("評価を保存しました。評価一覧に反映されます。");
+    } catch (e) {
+      console.error("Failed to save evaluation:", e);
+      setEvaluationMessage(e instanceof Error ? e.message : "評価の保存に失敗しました。");
+    } finally {
+      setIsSavingEvaluation(false);
     }
   };
 
@@ -653,6 +738,37 @@ function PlanPageContent() {
       {/* Scorecard */}
       <Section title={t("plan.scorecard.title")} className="mb-10">
         <Card variant="default" padding="md">
+          <div className="mb-4 grid gap-4 sm:grid-cols-3">
+            <Input
+              label="候補者名"
+              placeholder="例：山田 太郎"
+              value={candidateName}
+              onChange={(e) => setCandidateName(e.target.value)}
+            />
+            <Select
+              label="判断"
+              value={decision}
+              onChange={(e) => setDecision(e.target.value as any)}
+              options={[
+                { value: "", label: "選択してください" },
+                { value: "strong_yes", label: "強く推奨" },
+                { value: "yes", label: "推奨" },
+                { value: "maybe", label: "保留" },
+                { value: "no", label: "非推奨" },
+              ]}
+            />
+            <div className="w-full">
+              <div className="block text-sm font-medium text-slate-700 mb-2">
+                合計スコア
+              </div>
+              <div className="rounded-md border border-[#E6EBF1] bg-[#F6F9FC] px-3 py-2 text-sm text-slate-900">
+                <span className="font-semibold">{totalScore}</span> / {totalMaxScore}
+                {!isScoreComplete && (
+                  <span className="ml-2 text-xs text-slate-500">（未入力あり）</span>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-[#F6F9FC] border-b border-[#E6EBF1]">
@@ -665,6 +781,9 @@ function PlanPageContent() {
                   </th>
                   <th className="px-4 py-3 text-center font-medium text-[#1A1F36] w-24">
                     {t("plan.scorecard.maxScore")}
+                  </th>
+                  <th className="px-4 py-3 text-center font-medium text-[#1A1F36] w-28">
+                    スコア
                   </th>
                 </tr>
               </thead>
@@ -682,11 +801,48 @@ function PlanPageContent() {
                         {item.maxScore}
                       </span>
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      <input
+                        type="number"
+                        min={0}
+                        max={item.maxScore}
+                        value={scoresByItemId[item.id] === "" ? "" : String(scoresByItemId[item.id])}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "") {
+                            setScoresByItemId((prev) => ({ ...prev, [item.id]: "" }));
+                            return;
+                          }
+                          const n = Number(raw);
+                          if (!Number.isFinite(n)) return;
+                          const clamped = Math.max(0, Math.min(item.maxScore, Math.round(n)));
+                          setScoresByItemId((prev) => ({ ...prev, [item.id]: clamped }));
+                        }}
+                        className="w-20 text-center rounded-md border border-[#E6EBF1] bg-white px-2 py-1 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#635BFF]/30 focus:border-[#635BFF]"
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-xs text-slate-500">
+              評価は保存後、評価一覧に表示されます。
+            </div>
+            <Button
+              variant="primary"
+              onClick={handleSaveEvaluation}
+              disabled={isSavingEvaluation || (isConfigured && (!user || !session?.access_token))}
+            >
+              {isSavingEvaluation ? "保存中..." : "評価を保存"}
+            </Button>
+          </div>
+          {evaluationMessage && (
+            <p className="mt-2 text-center text-sm text-slate-600">
+              {evaluationMessage}
+            </p>
+          )}
         </Card>
       </Section>
 
