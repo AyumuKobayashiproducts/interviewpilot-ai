@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const language = body.language || "en";
     const languageInstruction =
       language === "ja"
-        ? "全ての出力は自然な日本語（人事担当者向けのビジネス日本語）で生成してください。質問、良い回答の特徴、注意点、スコアカード、面接官へのメモ、全て日本語で記載してください。"
+        ? "全ての出力は自然な日本語（人事担当者向けのビジネス日本語）で生成してください。質問、良い回答の特徴、注意点、スコアカード、面接官へのメモ、全て日本語で記載してください。英語の見出し（例: Communication, Technical Fit など）を出力しないでください。"
         : "Generate all output in natural business English. All questions, good signs, red flags, scorecard items, and interviewer notes must be in English.";
 
     const roleContext = `
@@ -47,6 +47,7 @@ Required Skills: ${body.roleProfile.requiredSkills.join(", ")}
 Nice-to-have Skills: ${body.roleProfile.niceToHaveSkills.join(", ")}
 Responsibilities: ${body.roleProfile.responsibilities.join("; ")}
 Evaluation Criteria: ${body.roleProfile.evaluationCriteria.join("; ")}
+Hiring Priorities / Ideal Candidate (optional): ${body.roleProfile.hiringPreferences || ""}
 `;
 
     const candidateContext = body.candidateProfile
@@ -74,7 +75,9 @@ Guidelines for goodSigns and redFlags:
 
 Guidelines for scorecard:
 - Include 5-7 evaluation categories
-- Categories should cover: Communication, Technical Fit, Problem Solving, Ownership/Initiative, Teamwork, Culture Fit, Overall Recommendation
+- Categories should cover:
+  - (Japanese) コミュニケーション / 技術適合 / 問題解決 / オーナーシップ／主体性 / チームワーク / カルチャーフィット / 総合推薦
+  - (English) Communication / Technical Fit / Problem Solving / Ownership/Initiative / Teamwork / Culture Fit / Overall Recommendation
 - Max scores should be 5 for each category
 - Descriptions should be clear and specific
 
@@ -146,6 +149,9 @@ Generate:
     );
   }
 }
+
+
+
 
 
 

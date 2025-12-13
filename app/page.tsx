@@ -183,7 +183,7 @@ export default function HomePage() {
                       サンプルダッシュボード
                     </p>
                     <p className="text-sm font-semibold text-[#1A1F36]">
-                      Senior Backend Engineer
+                      シニア バックエンドエンジニア
                     </p>
                   </div>
                   <span className="inline-flex items-center rounded-full border border-[#E6EBF1] px-2 py-0.5 text-[11px] text-[#697386]">
@@ -237,26 +237,26 @@ export default function HomePage() {
                     <tbody className="divide-y divide-[#E6EBF1]">
                       <tr>
                         <td className="px-3 py-2 text-[#1A1F36]">山田 太郎</td>
-                        <td className="px-3 py-2 text-[#697386]">Backend</td>
+                        <td className="px-3 py-2 text-[#697386]">バックエンド</td>
                         <td className="px-3 py-2 text-center text-[#1A1F36]">
                           82
                         </td>
                         <td className="px-3 py-2 text-[#0070E0] text-xs">
-                          Strong Yes
+                          強く推奨
                         </td>
                       </tr>
                       <tr>
                         <td className="px-3 py-2 text-[#1A1F36]">
-                          Jane Doe
+                          鈴木 次郎
                         </td>
                         <td className="px-3 py-2 text-[#697386]">
-                          Full‑stack
+                          フルスタック
                         </td>
                         <td className="px-3 py-2 text-center text-[#1A1F36]">
                           78
                         </td>
                         <td className="px-3 py-2 text-[#697386] text-xs">
-                          Yes
+                          推奨
                         </td>
                       </tr>
                       <tr>
@@ -264,13 +264,13 @@ export default function HomePage() {
                           佐藤 花子
                         </td>
                         <td className="px-3 py-2 text-[#697386]">
-                          Platform
+                          プラットフォーム
                         </td>
                         <td className="px-3 py-2 text-center text-[#1A1F36]">
                           71
                         </td>
                         <td className="px-3 py-2 text-[#697386] text-xs">
-                          Maybe
+                          保留
                         </td>
                       </tr>
                     </tbody>
